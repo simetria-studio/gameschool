@@ -1,0 +1,175 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Aluno;
+use App\Models\Turma;
+use App\Models\Unidade;
+use App\Models\User;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
+
+class AlunoController extends Controller
+{
+    public function index(Request $request): View
+    {
+        $perPage = (int) $request->get('per_page', 10);
+        $perPage = in_array($perPage, [10, 25, 50, 100], true) ? $perPage : 10;
+        $search = trim((string) $request->get('search', ''));
+
+        $query = Aluno::with(['unidade', 'turma'])
+            ->when($search !== '', function ($q) use ($search) {
+                $q->where('nome', 'like', '%' . $search . '%')
+                    ->orWhere('genero', 'like', '%' . $search . '%')
+                    ->orWhereHas('unidade', fn ($u) => $u->where('titulo', 'like', '%' . $search . '%'))
+                    ->orWhereHas('turma', fn ($t) => $t->where('nome', 'like', '%' . $search . '%'));
+            })
+            ->orderBy('nome');
+
+        $alunos = $query->paginate($perPage)->withQueryString();
+        $unidades = Unidade::orderBy('titulo')->get();
+        $turmas = Turma::orderBy('nome')->get();
+
+        return view('alunos.index', [
+            'alunos' => $alunos,
+            'unidades' => $unidades,
+            'turmas' => $turmas,
+            'perPage' => $perPage,
+            'search' => $search,
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'genero' => ['required', 'in:masculino,feminino,outro'],
+            'nome' => ['required', 'string', 'max:255'],
+            'data_nascimento' => ['nullable', 'date'],
+            'coins' => ['required', 'integer', 'min:0'],
+            'xp' => ['required', 'integer', 'min:0'],
+            'unidade_id' => ['required', 'exists:unidades,id'],
+            'turma_id' => ['required', 'exists:turmas,id'],
+        ], [], [
+            'genero' => 'gênero',
+            'nome' => 'nome',
+            'data_nascimento' => 'data de nascimento',
+            'unidade_id' => 'unidade',
+            'turma_id' => 'turma',
+        ]);
+
+        $aluno = Aluno::create($validated);
+
+        $user = User::create([
+            'name' => $aluno->nome,
+            'username' => 'aluno' . $aluno->id,
+            'email' => 'aluno' . $aluno->id . '@alunos.' . (parse_url(config('app.url'), PHP_URL_HOST) ?: 'local'),
+            'password' => Str::random(16),
+        ]);
+        $user->generateQrLoginToken();
+
+        $aluno->update(['user_id' => $user->id]);
+
+        return redirect()
+            ->route('alunos.index', $request->only(['per_page', 'search']))
+            ->with('success', 'Aluno adicionado com sucesso.');
+    }
+
+    public function update(Request $request, Aluno $aluno): RedirectResponse
+    {
+        $validated = $request->validate([
+            'genero' => ['required', 'in:masculino,feminino,outro'],
+            'nome' => ['required', 'string', 'max:255'],
+            'data_nascimento' => ['nullable', 'date'],
+            'coins' => ['required', 'integer', 'min:0'],
+            'xp' => ['required', 'integer', 'min:0'],
+            'unidade_id' => ['required', 'exists:unidades,id'],
+            'turma_id' => ['required', 'exists:turmas,id'],
+        ], [], [
+            'genero' => 'gênero',
+            'nome' => 'nome',
+            'data_nascimento' => 'data de nascimento',
+            'unidade_id' => 'unidade',
+            'turma_id' => 'turma',
+        ]);
+
+        $aluno->update($validated);
+
+        if ($aluno->user) {
+            $aluno->user->update(['name' => $aluno->nome]);
+        }
+
+        return redirect()
+            ->route('alunos.index', $request->only(['per_page', 'search']))
+            ->with('success', 'Aluno atualizado com sucesso.');
+    }
+
+    public function destroy(Request $request, Aluno $aluno): RedirectResponse
+    {
+        $user = $aluno->user;
+        $aluno->delete();
+        $user?->delete();
+
+        return redirect()
+            ->route('alunos.index', $request->only(['per_page', 'search']))
+            ->with('success', 'Aluno excluído com sucesso.');
+    }
+
+    public function cracha(Aluno $aluno): View
+    {
+        $aluno->load(['unidade', 'turma', 'user']);
+
+        if (! $aluno->user) {
+            $this->ensureAlunoUserAndToken($aluno);
+        }
+
+        return view('alunos.cracha', ['aluno' => $aluno]);
+    }
+
+    public function crachasLote(Request $request): View
+    {
+        $unidades = Unidade::orderBy('titulo')->get();
+        $turmas = Turma::orderBy('nome')->get();
+
+        $selectedUnidade = $request->input('unidade_id');
+        $selectedTurma = $request->input('turma_id');
+
+        $query = Aluno::with(['unidade', 'turma', 'user'])
+            ->when($selectedUnidade, fn ($q) => $q->where('unidade_id', $selectedUnidade))
+            ->when($selectedTurma, fn ($q) => $q->where('turma_id', $selectedTurma))
+            ->orderBy('nome');
+
+        $alunos = $query->get();
+
+        foreach ($alunos as $aluno) {
+            if (! $aluno->user) {
+                $this->ensureAlunoUserAndToken($aluno);
+                $aluno->load('user');
+            } elseif (! $aluno->user->qr_login_token) {
+                $aluno->user->generateQrLoginToken();
+            }
+        }
+
+        return view('alunos.crachas-lote', [
+            'alunos' => $alunos,
+            'unidades' => $unidades,
+            'turmas' => $turmas,
+            'selectedUnidade' => $selectedUnidade,
+            'selectedTurma' => $selectedTurma,
+        ]);
+    }
+
+    private function ensureAlunoUserAndToken(Aluno $aluno): void
+    {
+        $user = User::create([
+            'name' => $aluno->nome,
+            'username' => 'aluno' . $aluno->id,
+            'email' => 'aluno' . $aluno->id . '@alunos.' . (parse_url(config('app.url'), PHP_URL_HOST) ?: 'local'),
+            'password' => Str::random(16),
+        ]);
+
+        $user->generateQrLoginToken();
+        $aluno->update(['user_id' => $user->id]);
+    }
+}
