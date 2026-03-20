@@ -88,9 +88,21 @@ class AtitudeController extends Controller
 
     public function showRecompensar(Atitude $atitude): View
     {
-        $unidades = Unidade::orderBy('titulo')->get();
+        $user = auth()->user();
+        $isMaster = ($user->access_role ?? 'professor') === 'master';
+
+        $unidades = $isMaster
+            ? Unidade::orderBy('titulo')->get()
+            : Unidade::where('id', $user->unidade_id)->orderBy('titulo')->get();
+
         $turmas = Turma::orderBy('nome')->get();
-        $alunos = Aluno::with(['unidade', 'turma'])->orderBy('nome')->get();
+
+        $alunosQuery = Aluno::with(['unidade', 'turma'])->orderBy('nome');
+        if (!$isMaster) {
+            $alunosQuery->where('unidade_id', $user->unidade_id);
+        }
+
+        $alunos = $alunosQuery->get();
 
         return view('atitudes.recompensar', [
             'atitude' => $atitude,
@@ -102,11 +114,21 @@ class AtitudeController extends Controller
 
     public function recompensar(Request $request, Atitude $atitude): RedirectResponse
     {
+        $user = auth()->user();
+        $isMaster = ($user->access_role ?? 'professor') === 'master';
+
         $validated = $request->validate([
             'aluno_id' => ['required', 'exists:alunos,id'],
         ], [], ['aluno_id' => 'aluno']);
 
         $aluno = Aluno::findOrFail($validated['aluno_id']);
+
+        if (!$isMaster) {
+            if ((int) $aluno->unidade_id !== (int) $user->unidade_id) {
+                abort(403);
+            }
+        }
+
         $aluno->increment('coins', $atitude->coins);
         $aluno->increment('xp', $atitude->xp);
 

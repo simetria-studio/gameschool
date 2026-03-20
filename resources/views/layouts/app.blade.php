@@ -186,38 +186,57 @@
             </div>
             <div class="gs-nav-scroll">
                 <nav class="nav flex-column">
-                    <a class="nav-link {{ request()->routeIs('pedidos.*') ? 'active' : '' }}" href="{{ route('pedidos.index') }}">
-                        <i class="bi bi-card-list"></i>
-                        <span>PEDIDOS</span>
-                    </a>
-                    <a class="nav-link {{ request()->routeIs('missoes.*') ? 'active' : '' }}" href="{{ route('missoes.index') }}">
-                        <i class="bi bi-flag"></i>
-                        <span>MISSÕES</span>
-                    </a>
-                    <a class="nav-link {{ request()->routeIs('atitudes.*') ? 'active' : '' }}" href="{{ route('atitudes.index') }}">
-                        <i class="bi bi-hand-thumbs-up"></i>
-                        <span>ATITUDES</span>
-                    </a>
-                    <a class="nav-link {{ request()->routeIs('turmas.*') ? 'active' : '' }}" href="{{ route('turmas.index') }}">
-                        <i class="bi bi-mortarboard"></i>
-                        <span>TURMAS</span>
-                    </a>
-                    <a class="nav-link {{ request()->routeIs('loja.*') ? 'active' : '' }}" href="{{ route('loja.index') }}">
-                        <i class="bi bi-bag"></i>
-                        <span>LOJA</span>
-                    </a>
-                    <a class="nav-link {{ request()->routeIs('alunos.*') ? 'active' : '' }}" href="{{ route('alunos.index') }}">
-                        <i class="bi bi-people"></i>
-                        <span>ALUNOS</span>
-                    </a>
-                    <a class="nav-link {{ request()->routeIs('usuarios.*') ? 'active' : '' }}" href="{{ route('usuarios.index') }}">
-                        <i class="bi bi-person"></i>
-                        <span>USUÁRIOS</span>
-                    </a>
-                    <a class="nav-link {{ request()->routeIs('unidades.*') ? 'active' : '' }}" href="{{ route('unidades.index') }}">
-                        <i class="bi bi-building"></i>
-                        <span>UNIDADES</span>
-                    </a>
+                    @php
+                        $role = auth()->user()->access_role ?? 'professor';
+                        $isMaster = $role === 'master';
+                        $isDirecao = $role === 'direcao';
+                        $isProfessor = $role === 'professor';
+                    @endphp
+
+                    @if ($isMaster || $isDirecao)
+                        <a class="nav-link {{ request()->routeIs('pedidos.*') ? 'active' : '' }}" href="{{ route('pedidos.index') }}">
+                            <i class="bi bi-card-list"></i>
+                            <span>PEDIDOS</span>
+                        </a>
+                    @endif
+
+                    @if ($isMaster || $isDirecao || $isProfessor)
+                        <a class="nav-link {{ request()->routeIs('missoes.*') ? 'active' : '' }}" href="{{ route('missoes.index') }}">
+                            <i class="bi bi-flag"></i>
+                            <span>MISSÕES</span>
+                        </a>
+                        <a class="nav-link {{ request()->routeIs('atitudes.*') ? 'active' : '' }}" href="{{ route('atitudes.index') }}">
+                            <i class="bi bi-hand-thumbs-up"></i>
+                            <span>ATITUDES</span>
+                        </a>
+                    @endif
+
+                    @if ($isMaster)
+                        <a class="nav-link {{ request()->routeIs('turmas.*') ? 'active' : '' }}" href="{{ route('turmas.index') }}">
+                            <i class="bi bi-mortarboard"></i>
+                            <span>TURMAS</span>
+                        </a>
+                        <a class="nav-link {{ request()->routeIs('usuarios.*') ? 'active' : '' }}" href="{{ route('usuarios.index') }}">
+                            <i class="bi bi-person"></i>
+                            <span>USUÁRIOS</span>
+                        </a>
+                        <a class="nav-link {{ request()->routeIs('unidades.*') ? 'active' : '' }}" href="{{ route('unidades.index') }}">
+                            <i class="bi bi-building"></i>
+                            <span>UNIDADES</span>
+                        </a>
+                    @endif
+
+                    @if ($isMaster || $isDirecao)
+                        <a class="nav-link {{ request()->routeIs('loja.*') ? 'active' : '' }}" href="{{ route('loja.index') }}">
+                            <i class="bi bi-bag"></i>
+                            <span>LOJA</span>
+                        </a>
+                        <a class="nav-link {{ request()->routeIs('alunos.*') ? 'active' : '' }}" href="{{ route('alunos.index') }}">
+                            <i class="bi bi-people"></i>
+                            <span>ALUNOS</span>
+                        </a>
+                    @endif
+
                     <a class="nav-link {{ request()->routeIs('conta.*') ? 'active' : '' }}" href="{{ route('conta.index') }}">
                         <i class="bi bi-person-circle"></i>
                         <span>CONTA</span>

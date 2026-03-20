@@ -188,12 +188,21 @@
                     </div>
                     <div class="mb-3">
                         <label for="aluno_unidade_id" class="form-label fw-semibold" style="color: var(--gs-text);">Unidade</label>
-                        <select class="form-select @error('unidade_id') is-invalid @enderror" id="aluno_unidade_id" name="unidade_id" required>
-                            <option value="">Selecione...</option>
-                            @foreach($unidades as $u)
-                                <option value="{{ $u->id }}" {{ old('unidade_id', $unidades->first()?->id) == $u->id ? 'selected' : '' }}>{{ $u->titulo }}</option>
-                            @endforeach
-                        </select>
+                        @if(!($canManageAllUnits ?? false))
+                            <input type="hidden" name="unidade_id" id="aluno_unidade_id_hidden" value="{{ old('unidade_id', $unidades->first()?->id) }}">
+                            <select class="form-select @error('unidade_id') is-invalid @enderror" id="aluno_unidade_id" disabled>
+                                @foreach($unidades as $u)
+                                    <option value="{{ $u->id }}" {{ old('unidade_id', $unidades->first()?->id) == $u->id ? 'selected' : '' }}>{{ $u->titulo }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <select class="form-select @error('unidade_id') is-invalid @enderror" id="aluno_unidade_id" name="unidade_id" required>
+                                <option value="">Selecione...</option>
+                                @foreach($unidades as $u)
+                                    <option value="{{ $u->id }}" {{ old('unidade_id', $unidades->first()?->id) == $u->id ? 'selected' : '' }}>{{ $u->titulo }}</option>
+                                @endforeach
+                            </select>
+                        @endif
                         @error('unidade_id')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -242,6 +251,9 @@ document.getElementById('modalAluno').addEventListener('show.bs.modal', function
         document.getElementById('aluno_coins').value = aluno.coins ?? 0;
         document.getElementById('aluno_xp').value = aluno.xp ?? 0;
         document.getElementById('aluno_unidade_id').value = aluno.unidade_id || (aluno.unidade && aluno.unidade.id) || '';
+        if (document.getElementById('aluno_unidade_id_hidden')) {
+            document.getElementById('aluno_unidade_id_hidden').value = aluno.unidade_id || (aluno.unidade && aluno.unidade.id) || '';
+        }
         document.getElementById('aluno_turma_id').value = aluno.turma_id || (aluno.turma && aluno.turma.id) || '';
     } else {
         title.textContent = 'Adicionar';
@@ -253,6 +265,9 @@ document.getElementById('modalAluno').addEventListener('show.bs.modal', function
         document.getElementById('aluno_coins').value = '0';
         document.getElementById('aluno_xp').value = '0';
         document.getElementById('aluno_unidade_id').value = '{{ old("unidade_id", $unidades->first()?->id ?? "") }}';
+        if (document.getElementById('aluno_unidade_id_hidden')) {
+            document.getElementById('aluno_unidade_id_hidden').value = '{{ old("unidade_id", $unidades->first()?->id ?? "") }}';
+        }
         document.getElementById('aluno_turma_id').value = '{{ old("turma_id", $turmas->first()?->id ?? "") }}';
     }
 });

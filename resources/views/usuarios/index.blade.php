@@ -48,6 +48,8 @@
                         <th class="py-3 ps-4">Nome</th>
                         <th class="py-3">Usuário</th>
                         <th class="py-3">E-mail</th>
+                        <th class="py-3">Acesso</th>
+                        <th class="py-3">Unidade</th>
                         <th class="py-3">Criado em</th>
                         <th class="py-3 pe-4 text-end">Ações</th>
                     </tr>
@@ -58,6 +60,8 @@
                             <td class="ps-4">{{ $usuario->name }}</td>
                             <td>{{ $usuario->username }}</td>
                             <td>{{ $usuario->email }}</td>
+                            <td>{{ ucfirst($usuario->access_role ?? 'professor') }}</td>
+                            <td>{{ $usuario->unidade?->titulo ?? '—' }}</td>
                             <td>{{ $usuario->created_at?->format('d/m/Y H:i') }}</td>
                             <td class="pe-4 text-end">
                                 <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalUsuario" data-action="edit" data-usuario="{{ json_encode($usuario) }}">
@@ -76,7 +80,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-5 gs-text-secondary">
+                            <td colspan="7" class="text-center py-5 gs-text-secondary">
                                 Nenhum registro encontrado
                             </td>
                         </tr>
@@ -153,6 +157,29 @@
                         @enderror
                     </div>
                     <div class="mb-3">
+                        <label for="usuario_access_role" class="form-label fw-semibold" style="color: var(--gs-text);">Tipo de acesso</label>
+                        <select class="form-select @error('access_role') is-invalid @enderror" id="usuario_access_role" name="access_role" required>
+                            <option value="master" {{ old('access_role', 'professor') === 'master' ? 'selected' : '' }}>Acesso master</option>
+                            <option value="direcao" {{ old('access_role') === 'direcao' ? 'selected' : '' }}>Acesso Direção</option>
+                            <option value="professor" {{ old('access_role') === 'professor' ? 'selected' : '' }}>Acesso professor</option>
+                        </select>
+                        @error('access_role')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="mb-4">
+                        <label for="usuario_unidade_id" class="form-label fw-semibold" style="color: var(--gs-text);">Unidade (direção/professor)</label>
+                        <select class="form-select @error('unidade_id') is-invalid @enderror" id="usuario_unidade_id" name="unidade_id" {{ old('access_role') === 'master' ? '' : '' }}>
+                            <option value="">Selecione...</option>
+                            @foreach($unidades as $u)
+                                <option value="{{ $u->id }}" {{ (string)old('unidade_id') === (string)$u->id ? 'selected' : '' }}>{{ $u->titulo }}</option>
+                            @endforeach
+                        </select>
+                        @error('unidade_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="mb-3">
                         <label for="usuario_password" class="form-label fw-semibold" style="color: var(--gs-text);">Senha</label>
                         <input type="password" class="form-control @error('password') is-invalid @enderror" id="usuario_password" name="password">
                         @error('password')
@@ -196,6 +223,8 @@ document.getElementById('modalUsuario').addEventListener('show.bs.modal', functi
         document.getElementById('usuario_name').value = usuario.name || '';
         document.getElementById('usuario_username').value = usuario.username || '';
         document.getElementById('usuario_email').value = usuario.email || '';
+        document.getElementById('usuario_access_role').value = usuario.access_role || 'professor';
+        document.getElementById('usuario_unidade_id').value = usuario.unidade_id ?? '';
     } else {
         title.textContent = 'Adicionar';
         submitBtn.textContent = 'Adicionar';
@@ -203,6 +232,8 @@ document.getElementById('modalUsuario').addEventListener('show.bs.modal', functi
         document.getElementById('usuario_name').value = '';
         document.getElementById('usuario_username').value = '';
         document.getElementById('usuario_email').value = '';
+        document.getElementById('usuario_access_role').value = 'professor';
+        document.getElementById('usuario_unidade_id').value = '{{ $unidades->first()?->id ?? '' }}';
     }
 });
 </script>

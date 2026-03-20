@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Unidade;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,7 +18,7 @@ class UsuarioController extends Controller
         $perPage = in_array($perPage, [10, 25, 50, 100], true) ? $perPage : 10;
         $search = trim((string) $request->get('search', ''));
 
-        $query = User::query()
+        $query = User::with('unidade')
             ->when($search !== '', function ($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
                     ->orWhere('username', 'like', '%' . $search . '%')
@@ -27,10 +28,13 @@ class UsuarioController extends Controller
 
         $usuarios = $query->paginate($perPage)->withQueryString();
 
+        $unidades = Unidade::orderBy('titulo')->get();
+
         return view('usuarios.index', [
             'usuarios' => $usuarios,
             'perPage' => $perPage,
             'search' => $search,
+            'unidades' => $unidades,
         ]);
     }
 
@@ -40,11 +44,15 @@ class UsuarioController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users,username'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'access_role' => ['required', 'in:master,direcao,professor'],
+            'unidade_id' => ['required_unless:access_role,master', 'nullable', 'exists:unidades,id'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
         ], [], [
             'name' => 'nome',
             'username' => 'usuário',
             'email' => 'e-mail',
+            'access_role' => 'tipo de acesso',
+            'unidade_id' => 'unidade',
             'password' => 'senha',
         ]);
 
@@ -53,6 +61,8 @@ class UsuarioController extends Controller
             'username' => $validated['username'],
             'email' => $validated['email'],
             'password' => $validated['password'],
+            'access_role' => $validated['access_role'],
+            'unidade_id' => $validated['unidade_id'] ?? null,
         ]);
 
         return redirect()
@@ -76,11 +86,15 @@ class UsuarioController extends Controller
                 'max:255',
                 Rule::unique('users', 'email')->ignore($usuario->id),
             ],
+            'access_role' => ['required', 'in:master,direcao,professor'],
+            'unidade_id' => ['required_unless:access_role,master', 'nullable', 'exists:unidades,id'],
             'password' => ['nullable', 'string', 'min:6', 'confirmed'],
         ], [], [
             'name' => 'nome',
             'username' => 'usuário',
             'email' => 'e-mail',
+            'access_role' => 'tipo de acesso',
+            'unidade_id' => 'unidade',
             'password' => 'senha',
         ]);
 
@@ -88,6 +102,8 @@ class UsuarioController extends Controller
             'name' => $validated['name'],
             'username' => $validated['username'],
             'email' => $validated['email'],
+            'access_role' => $validated['access_role'],
+            'unidade_id' => $validated['unidade_id'] ?? null,
         ];
 
         if (!empty($validated['password'])) {

@@ -12,6 +12,13 @@
         </button>
     </div>
 
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show py-2 small" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        </div>
+    @endif
+
     <div class="gs-card p-0 overflow-hidden">
         <div class="p-3 border-bottom d-flex flex-wrap align-items-center justify-content-between gap-3">
             <div class="d-flex align-items-center gap-2">
@@ -50,14 +57,37 @@
                 <tbody>
                     @forelse($pedidos as $pedido)
                         <tr>
-                            <td class="ps-4">{{ $pedido->aluno ?? '-' }}</td>
-                            <td>{{ $pedido->produto ?? '-' }}</td>
-                            <td>{{ $pedido->qnt_atual ?? '-' }}</td>
-                            <td>{{ $pedido->coins ?? '-' }}</td>
-                            <td><span class="badge bg-secondary">{{ $pedido->status ?? '-' }}</span></td>
-                            <td>{{ $pedido->data_horario ?? '-' }}</td>
+                            <td class="ps-4">{{ $pedido->aluno->nome ?? '-' }}</td>
+                            <td>{{ $pedido->produto->titulo ?? '-' }}</td>
+                            <td>{{ $pedido->qnt_atual }}</td>
+                            <td>{{ $pedido->coins }}</td>
+                            <td><span class="badge bg-secondary">{{ ucfirst($pedido->status) }}</span></td>
+                            <td>{{ $pedido->created_at?->format('d/m/Y H:i') }}</td>
                             <td class="pe-4 text-end">
-                                <button type="button" class="btn btn-sm btn-outline-secondary">Editar</button>
+                                <div class="d-inline-flex gap-1">
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-secondary js-editar-pedido"
+                                        data-id="{{ $pedido->id }}"
+                                        data-aluno-id="{{ $pedido->aluno_id }}"
+                                        data-loja-item-id="{{ $pedido->loja_item_id }}"
+                                        data-qnt-atual="{{ $pedido->qnt_atual }}"
+                                        data-coins="{{ $pedido->coins }}"
+                                        data-status="{{ $pedido->status }}"
+                                        data-update-url="{{ route('pedidos.update', $pedido) }}"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalPedido"
+                                    >
+                                        Editar
+                                    </button>
+                                    <form action="{{ route('pedidos.destroy', $pedido) }}" method="post" onsubmit="return confirm('Deseja apagar este pedido?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <input type="hidden" name="per_page" value="{{ $perPage ?? 10 }}">
+                                        <input type="hidden" name="search" value="{{ $search ?? '' }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Apagar</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -94,7 +124,7 @@
     </div>
 </div>
 
-{{-- Modal criação de pedido (somente front-end, sem backend ainda) --}}
+{{-- Modal criação/edição de pedido --}}
 <div class="modal fade" id="modalPedido" tabindex="-1" aria-labelledby="modalPedidoLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -103,40 +133,65 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
             </div>
             <div class="modal-body pt-2">
-                <form>
+                <form method="post" action="{{ route('pedidos.store') }}" id="formPedido">
+                    @csrf
+                    <input type="hidden" name="_method" id="pedido_method" value="POST">
+                    <input type="hidden" name="per_page" value="{{ $perPage ?? 10 }}">
+                    <input type="hidden" name="search" value="{{ $search ?? '' }}">
                     <div class="mb-3">
                         <label class="form-label fw-semibold" style="color: var(--gs-text);">Aluno</label>
-                        <select class="form-select">
+                        <select class="form-select @error('aluno_id') is-invalid @enderror" id="pedido_aluno_id" name="aluno_id" required>
                             <option value="">Selecione o aluno...</option>
-                            {{-- futuramente popular com alunos cadastrados --}}
+                            @foreach(($alunos ?? collect()) as $aluno)
+                                <option value="{{ $aluno->id }}" {{ old('aluno_id') == $aluno->id ? 'selected' : '' }}>{{ $aluno->nome }}</option>
+                            @endforeach
                         </select>
+                        @error('aluno_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold" style="color: var(--gs-text);">Produto</label>
-                        <select class="form-select">
+                        <select class="form-select @error('loja_item_id') is-invalid @enderror" id="pedido_produto_id" name="loja_item_id" required>
                             <option value="">Selecione o produto...</option>
-                            {{-- futuramente popular com itens da loja --}}
+                            @foreach(($produtos ?? collect()) as $produto)
+                                <option value="{{ $produto->id }}" data-coins="{{ $produto->coins }}" {{ old('loja_item_id') == $produto->id ? 'selected' : '' }}>
+                                    {{ $produto->titulo }}
+                                </option>
+                            @endforeach
                         </select>
+                        @error('loja_item_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold" style="color: var(--gs-text);">Qnt atual</label>
-                        <input type="number" class="form-control" min="0" value="1">
+                        <input type="number" class="form-control @error('qnt_atual') is-invalid @enderror" min="1" value="{{ old('qnt_atual', 1) }}" id="pedido_qnt_atual" name="qnt_atual" required>
+                        @error('qnt_atual')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold" style="color: var(--gs-text);">Coins</label>
-                        <input type="number" class="form-control" min="0" value="0">
+                        <input type="number" class="form-control @error('coins') is-invalid @enderror" min="0" value="{{ old('coins', 0) }}" id="pedido_coins" name="coins" required>
+                        @error('coins')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="mb-4">
                         <label class="form-label fw-semibold" style="color: var(--gs-text);">Status</label>
-                        <select class="form-select">
-                            <option value="pendente">Pendente</option>
-                            <option value="aprovado">Aprovado</option>
-                            <option value="recusado">Recusado</option>
+                        <select class="form-select @error('status') is-invalid @enderror" name="status" required>
+                            <option value="pendente" {{ old('status', 'pendente') === 'pendente' ? 'selected' : '' }}>Pendente</option>
+                            <option value="aprovado" {{ old('status') === 'aprovado' ? 'selected' : '' }}>Aprovado</option>
+                            <option value="recusado" {{ old('status') === 'recusado' ? 'selected' : '' }}>Recusado</option>
                         </select>
+                        @error('status')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
                     <div class="d-flex justify-content-end gap-2">
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-gs-primary">Adicionar</button>
+                        <button type="submit" class="btn btn-gs-primary" id="pedido_submit_btn">Adicionar</button>
                     </div>
                 </form>
             </div>
@@ -144,3 +199,73 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modalElement = document.getElementById('modalPedido');
+    const form = document.getElementById('formPedido');
+    const methodInput = document.getElementById('pedido_method');
+    const title = document.getElementById('modalPedidoLabel');
+    const submitBtn = document.getElementById('pedido_submit_btn');
+    const defaultAction = '{{ route('pedidos.store') }}';
+    const alunoInput = document.getElementById('pedido_aluno_id');
+    const produtoSelect = document.getElementById('pedido_produto_id');
+    const qntInput = document.getElementById('pedido_qnt_atual');
+    const coinsInput = document.getElementById('pedido_coins');
+    const statusInput = document.querySelector('select[name="status"]');
+    const editarButtons = document.querySelectorAll('.js-editar-pedido');
+    const addButton = document.querySelector('[data-bs-target="#modalPedido"]:not(.js-editar-pedido)');
+
+    function resetParaCriacao() {
+        if (!form) return;
+        form.setAttribute('action', defaultAction);
+        if (methodInput) methodInput.value = 'POST';
+        if (title) title.textContent = 'Adicionar pedido';
+        if (submitBtn) submitBtn.textContent = 'Adicionar';
+        if (alunoInput) alunoInput.value = '';
+        if (produtoSelect) produtoSelect.value = '';
+        if (qntInput) qntInput.value = 1;
+        if (coinsInput) coinsInput.value = 0;
+        if (statusInput) statusInput.value = 'pendente';
+    }
+
+    if (addButton) {
+        addButton.addEventListener('click', resetParaCriacao);
+    }
+
+    editarButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (!form) return;
+            form.setAttribute('action', this.dataset.updateUrl || defaultAction);
+            if (methodInput) methodInput.value = 'PUT';
+            if (title) title.textContent = 'Editar pedido';
+            if (submitBtn) submitBtn.textContent = 'Salvar';
+            if (alunoInput) alunoInput.value = this.dataset.alunoId || '';
+            if (produtoSelect) produtoSelect.value = this.dataset.lojaItemId || '';
+            if (qntInput) qntInput.value = this.dataset.qntAtual || 1;
+            if (coinsInput) coinsInput.value = this.dataset.coins || 0;
+            if (statusInput) statusInput.value = this.dataset.status || 'pendente';
+        });
+    });
+
+    if (modalElement) {
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            resetParaCriacao();
+        });
+    }
+
+    if (!produtoSelect || !coinsInput) return;
+
+    produtoSelect.addEventListener('change', function () {
+        const option = this.options[this.selectedIndex];
+        const coins = option ? option.getAttribute('data-coins') : null;
+        coinsInput.value = coins ?? 0;
+    });
+
+    @if($errors->any())
+        new bootstrap.Modal(modalElement).show();
+    @endif
+});
+</script>
+@endpush

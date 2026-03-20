@@ -149,12 +149,21 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="missao_unidade_id" class="form-label fw-semibold" style="color: var(--gs-text);">Unidade</label>
-                            <select class="form-select @error('unidade_id') is-invalid @enderror" id="missao_unidade_id" name="unidade_id" required>
-                                <option value="">Selecione...</option>
-                                @foreach($unidades as $u)
-                                    <option value="{{ $u->id }}" {{ old('unidade_id') == $u->id ? 'selected' : '' }}>{{ $u->titulo }}</option>
-                                @endforeach
-                            </select>
+                            @if(!($canManageAllUnits ?? false))
+                                <input type="hidden" name="unidade_id" id="missao_unidade_id_hidden" value="{{ old('unidade_id', $unidades->first()?->id) }}">
+                                <select class="form-select @error('unidade_id') is-invalid @enderror" id="missao_unidade_id" disabled>
+                                    @foreach($unidades as $u)
+                                        <option value="{{ $u->id }}" {{ old('unidade_id', $unidades->first()?->id) == $u->id ? 'selected' : '' }}>{{ $u->titulo }}</option>
+                                    @endforeach
+                                </select>
+                            @else
+                                <select class="form-select @error('unidade_id') is-invalid @enderror" id="missao_unidade_id" name="unidade_id" required>
+                                    <option value="">Selecione...</option>
+                                    @foreach($unidades as $u)
+                                        <option value="{{ $u->id }}" {{ old('unidade_id') == $u->id ? 'selected' : '' }}>{{ $u->titulo }}</option>
+                                    @endforeach
+                                </select>
+                            @endif
                             @error('unidade_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -240,6 +249,9 @@ document.getElementById('modalMissao').addEventListener('show.bs.modal', functio
 
         document.getElementById('missao_titulo').value = missao.titulo || '';
         document.getElementById('missao_unidade_id').value = missao.unidade_id || (missao.unidade && missao.unidade.id) || '';
+        if (document.getElementById('missao_unidade_id_hidden')) {
+            document.getElementById('missao_unidade_id_hidden').value = missao.unidade_id || (missao.unidade && missao.unidade.id) || '';
+        }
         document.getElementById('missao_turma_id').value = missao.turma_id || (missao.turma && missao.turma.id) || '';
         document.getElementById('missao_descricao').value = missao.descricao || '';
         document.getElementById('missao_xp').value = missao.xp ?? 0;
@@ -252,6 +264,10 @@ document.getElementById('modalMissao').addEventListener('show.bs.modal', functio
         form.action = '{{ route("missoes.store") }}';
         document.getElementById('missao_titulo').value = '';
         document.getElementById('missao_unidade_id').value = '';
+        if (document.getElementById('missao_unidade_id_hidden')) {
+            document.getElementById('missao_unidade_id_hidden').value = '{{ old("unidade_id", $unidades->first()?->id ?? "") }}';
+            document.getElementById('missao_unidade_id').value = '{{ old("unidade_id", $unidades->first()?->id ?? "") }}';
+        }
         document.getElementById('missao_turma_id').value = '';
         document.getElementById('missao_descricao').value = '';
         document.getElementById('missao_xp').value = '0';
