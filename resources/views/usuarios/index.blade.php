@@ -50,6 +50,7 @@
                         <th class="py-3">E-mail</th>
                         <th class="py-3">Acesso</th>
                         <th class="py-3">Unidade</th>
+                        <th class="py-3">Turmas</th>
                         <th class="py-3">Criado em</th>
                         <th class="py-3 pe-4 text-end">Ações</th>
                     </tr>
@@ -62,9 +63,21 @@
                             <td>{{ $usuario->email }}</td>
                             <td>{{ ucfirst($usuario->access_role ?? 'professor') }}</td>
                             <td>{{ $usuario->unidade?->titulo ?? '—' }}</td>
+                            <td class="small">{{ $usuario->turmas->pluck('nome')->join(', ') ?: '—' }}</td>
                             <td>{{ $usuario->created_at?->format('d/m/Y H:i') }}</td>
                             <td class="pe-4 text-end">
-                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalUsuario" data-action="edit" data-usuario="{{ json_encode($usuario) }}">
+                                @php
+                                    $usuarioEdit = [
+                                        'id' => $usuario->id,
+                                        'name' => $usuario->name,
+                                        'username' => $usuario->username,
+                                        'email' => $usuario->email,
+                                        'access_role' => $usuario->access_role,
+                                        'unidade_id' => $usuario->unidade_id,
+                                        'turma_ids' => $usuario->turmas->pluck('id')->values()->all(),
+                                    ];
+                                @endphp
+                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalUsuario" data-action="edit" data-usuario="{{ json_encode($usuarioEdit) }}">
                                     <i class="bi bi-pencil me-1"></i> Editar
                                 </button>
                                 <form action="{{ route('usuarios.destroy', $usuario) }}" method="post" class="d-inline" onsubmit="return confirm('Deseja realmente excluir este usuário?');">
@@ -80,7 +93,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center py-5 gs-text-secondary">
+                            <td colspan="8" class="text-center py-5 gs-text-secondary">
                                 Nenhum registro encontrado
                             </td>
                         </tr>
@@ -167,7 +180,7 @@
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label for="usuario_unidade_id" class="form-label fw-semibold" style="color: var(--gs-text);">Unidade (direção/professor)</label>
                         <select class="form-select @error('unidade_id') is-invalid @enderror" id="usuario_unidade_id" name="unidade_id" {{ old('access_role') === 'master' ? '' : '' }}>
                             <option value="">Selecione...</option>
@@ -177,6 +190,14 @@
                         </select>
                         @error('unidade_id')
                             <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="mb-4" id="wrap_usuario_turmas" style="display: none;">
+                        <label for="usuario_turma_ids" class="form-label fw-semibold" style="color: var(--gs-text);">Turmas do professor</label>
+                        <select class="form-select @error('turma_ids') is-invalid @enderror" id="usuario_turma_ids" name="turma_ids[]" multiple size="6"></select>
+                        <small class="text-muted d-block mt-1">Segure <kbd>Ctrl</kbd> / <kbd>Cmd</kbd> para selecionar várias turmas da mesma escola.</small>
+                        @error('turma_ids')
+                            <div class="invalid-feedback d-block">{{ $message }}</div>
                         @enderror
                     </div>
                     <div class="mb-3">
@@ -201,41 +222,92 @@
 
 @push('scripts')
 <script>
-document.getElementById('modalUsuario').addEventListener('show.bs.modal', function (e) {
-    const button = e.relatedTarget;
-    const action = button.getAttribute('data-action');
-    const form = document.getElementById('formUsuario');
-    const title = this.querySelector('#modalUsuarioLabel');
-    const submitBtn = form.querySelector('button[type=\"submit\"]');
-    const methodInput = form.querySelector('input[name=\"_method\"]');
-    if (methodInput) methodInput.remove();
+(function () {
+    const turmasPorUnidade = @json($turmasPorUnidadeJson ?? []);
 
-    document.getElementById('usuario_password').value = '';
-    document.getElementById('usuario_password_confirmation').value = '';
-
-    if (action === 'edit' && button.getAttribute('data-usuario')) {
-        const usuario = JSON.parse(button.getAttribute('data-usuario'));
-        title.textContent = 'Editar';
-        submitBtn.textContent = 'Salvar';
-        form.action = '{{ url('usuarios') }}/' + usuario.id;
-        form.insertAdjacentHTML('afterbegin', '<input type=\"hidden\" name=\"_method\" value=\"PUT\">');
-
-        document.getElementById('usuario_name').value = usuario.name || '';
-        document.getElementById('usuario_username').value = usuario.username || '';
-        document.getElementById('usuario_email').value = usuario.email || '';
-        document.getElementById('usuario_access_role').value = usuario.access_role || 'professor';
-        document.getElementById('usuario_unidade_id').value = usuario.unidade_id ?? '';
-    } else {
-        title.textContent = 'Adicionar';
-        submitBtn.textContent = 'Adicionar';
-        form.action = '{{ route('usuarios.store') }}';
-        document.getElementById('usuario_name').value = '';
-        document.getElementById('usuario_username').value = '';
-        document.getElementById('usuario_email').value = '';
-        document.getElementById('usuario_access_role').value = 'professor';
-        document.getElementById('usuario_unidade_id').value = '{{ $unidades->first()?->id ?? '' }}';
+    function toggleTurmasWrap() {
+        const role = document.getElementById('usuario_access_role').value;
+        const wrap = document.getElementById('wrap_usuario_turmas');
+        if (!wrap) return;
+        wrap.style.display = role === 'professor' ? 'block' : 'none';
     }
-});
+
+    function fillUsuarioTurmas(selectedIds) {
+        const select = document.getElementById('usuario_turma_ids');
+        if (!select) return;
+        const uid = String(document.getElementById('usuario_unidade_id').value || '');
+        select.innerHTML = '';
+        const list = turmasPorUnidade[uid] || [];
+        list.forEach(function (t) {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = t.nome;
+            if (selectedIds && selectedIds.map(String).includes(String(t.id))) {
+                opt.selected = true;
+            }
+            select.appendChild(opt);
+        });
+    }
+
+    const unidadeSel = document.getElementById('usuario_unidade_id');
+    if (unidadeSel) {
+        unidadeSel.addEventListener('change', function () {
+            if (document.getElementById('usuario_access_role').value === 'professor') {
+                fillUsuarioTurmas([]);
+            }
+        });
+    }
+
+    const roleSel = document.getElementById('usuario_access_role');
+    if (roleSel) {
+        roleSel.addEventListener('change', function () {
+            toggleTurmasWrap();
+            if (this.value === 'professor') {
+                fillUsuarioTurmas([]);
+            }
+        });
+    }
+
+    document.getElementById('modalUsuario').addEventListener('show.bs.modal', function (e) {
+        const button = e.relatedTarget;
+        const action = button ? button.getAttribute('data-action') : 'add';
+        const form = document.getElementById('formUsuario');
+        const title = this.querySelector('#modalUsuarioLabel');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const methodInput = form.querySelector('input[name="_method"]');
+        if (methodInput) methodInput.remove();
+
+        document.getElementById('usuario_password').value = '';
+        document.getElementById('usuario_password_confirmation').value = '';
+
+        if (action === 'edit' && button.getAttribute('data-usuario')) {
+            const usuario = JSON.parse(button.getAttribute('data-usuario'));
+            title.textContent = 'Editar';
+            submitBtn.textContent = 'Salvar';
+            form.action = '{{ url('usuarios') }}/' + usuario.id;
+            form.insertAdjacentHTML('afterbegin', '<input type="hidden" name="_method" value="PUT">');
+
+            document.getElementById('usuario_name').value = usuario.name || '';
+            document.getElementById('usuario_username').value = usuario.username || '';
+            document.getElementById('usuario_email').value = usuario.email || '';
+            document.getElementById('usuario_access_role').value = usuario.access_role || 'professor';
+            document.getElementById('usuario_unidade_id').value = usuario.unidade_id ?? '';
+            toggleTurmasWrap();
+            fillUsuarioTurmas(usuario.turma_ids || []);
+        } else {
+            title.textContent = 'Adicionar';
+            submitBtn.textContent = 'Adicionar';
+            form.action = '{{ route('usuarios.store') }}';
+            document.getElementById('usuario_name').value = '';
+            document.getElementById('usuario_username').value = '';
+            document.getElementById('usuario_email').value = '';
+            document.getElementById('usuario_access_role').value = 'professor';
+            document.getElementById('usuario_unidade_id').value = '{{ $unidades->first()?->id ?? '' }}';
+            toggleTurmasWrap();
+            fillUsuarioTurmas(@json(old('turma_ids', [])));
+        }
+    });
+})();
 </script>
 @endpush
 

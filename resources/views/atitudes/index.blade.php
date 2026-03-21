@@ -46,6 +46,7 @@
                 <thead>
                     <tr>
                         <th class="py-3 ps-4">Título</th>
+                        <th class="py-3">Escola / Unidade</th>
                         <th class="py-3">Descrição</th>
                         <th class="py-3">Criado em</th>
                         <th class="py-3">Tipo</th>
@@ -56,6 +57,7 @@
                     @forelse($atitudes as $atitude)
                         <tr>
                             <td class="ps-4">{{ $atitude->titulo }}</td>
+                            <td>{{ $atitude->unidade->titulo ?? '—' }}</td>
                             <td>{{ Str::limit($atitude->descricao, 50) ?? '—' }}</td>
                             <td>{{ $atitude->created_at->format('d/m/Y H:i') }}</td>
                             <td>
@@ -69,7 +71,7 @@
                                 <a href="{{ route('atitudes.recompensar', $atitude) }}" class="btn btn-sm btn-success">
                                     <i class="bi bi-gift me-1"></i> Recompensar
                                 </a>
-                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalAtitude" data-action="edit" data-atitude="{{ json_encode($atitude) }}">
+                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalAtitude" data-action="edit" data-atitude="{{ json_encode($atitude->only(['id', 'unidade_id', 'titulo', 'descricao', 'tipo', 'coins', 'xp'])) }}">
                                     <i class="bi bi-pencil me-1"></i> Editar
                                 </button>
                                 <form action="{{ route('atitudes.destroy', $atitude) }}" method="post" class="d-inline" onsubmit="return confirm('Deseja realmente excluir esta atitude?');">
@@ -85,7 +87,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-5 gs-text-secondary">
+                            <td colspan="6" class="text-center py-5 gs-text-secondary">
                                 Nenhum registro encontrado
                             </td>
                         </tr>
@@ -146,6 +148,27 @@
                     <input type="hidden" name="per_page" value="{{ $perPage }}">
                     <input type="hidden" name="search" value="{{ $search }}">
 
+                    <div class="mb-3">
+                        <label for="atitude_unidade_id" class="form-label fw-semibold" style="color: var(--gs-text);">Escola / Unidade</label>
+                        @if(!($canManageAllUnits ?? false))
+                            <input type="hidden" name="unidade_id" id="atitude_unidade_id_hidden" value="{{ old('unidade_id', $unidades->first()?->id) }}">
+                            <select class="form-select @error('unidade_id') is-invalid @enderror" id="atitude_unidade_id" disabled>
+                                @foreach($unidades as $u)
+                                    <option value="{{ $u->id }}" {{ old('unidade_id', $unidades->first()?->id) == $u->id ? 'selected' : '' }}>{{ $u->titulo }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <select class="form-select @error('unidade_id') is-invalid @enderror" id="atitude_unidade_id" name="unidade_id" required>
+                                <option value="">Selecione...</option>
+                                @foreach($unidades as $u)
+                                    <option value="{{ $u->id }}" {{ old('unidade_id') == $u->id ? 'selected' : '' }}>{{ $u->titulo }}</option>
+                                @endforeach
+                            </select>
+                        @endif
+                        @error('unidade_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
                     <div class="mb-3">
                         <label for="atitude_titulo" class="form-label fw-semibold" style="color: var(--gs-text);">Título</label>
                         <input type="text" class="form-control @error('titulo') is-invalid @enderror" id="atitude_titulo" name="titulo" value="{{ old('titulo') }}" required>
@@ -210,6 +233,10 @@ document.getElementById('modalAtitude').addEventListener('show.bs.modal', functi
         form.action = '{{ url("atitudes") }}/' + atitude.id;
         form.insertAdjacentHTML('afterbegin', '<input type="hidden" name="_method" value="PUT">');
 
+        document.getElementById('atitude_unidade_id').value = atitude.unidade_id || '';
+        if (document.getElementById('atitude_unidade_id_hidden')) {
+            document.getElementById('atitude_unidade_id_hidden').value = atitude.unidade_id || '';
+        }
         document.getElementById('atitude_titulo').value = atitude.titulo || '';
         document.getElementById('atitude_descricao').value = atitude.descricao || '';
         document.getElementById('atitude_tipo').value = atitude.tipo || 'positiva';
@@ -219,6 +246,10 @@ document.getElementById('modalAtitude').addEventListener('show.bs.modal', functi
         title.textContent = 'Adicionar';
         submitBtn.textContent = 'Adicionar';
         form.action = '{{ route("atitudes.store") }}';
+        document.getElementById('atitude_unidade_id').value = '{{ old("unidade_id", $unidades->first()?->id ?? "") }}';
+        if (document.getElementById('atitude_unidade_id_hidden')) {
+            document.getElementById('atitude_unidade_id_hidden').value = '{{ old("unidade_id", $unidades->first()?->id ?? "") }}';
+        }
         document.getElementById('atitude_titulo').value = '';
         document.getElementById('atitude_descricao').value = '';
         document.getElementById('atitude_tipo').value = 'positiva';

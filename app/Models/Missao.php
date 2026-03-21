@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Missao extends Model
 {
@@ -12,7 +13,6 @@ class Missao extends Model
     protected $fillable = [
         'titulo',
         'unidade_id',
-        'turma_id',
         'descricao',
         'xp',
         'coins',
@@ -29,8 +29,8 @@ class Missao extends Model
         return $this->belongsTo(Unidade::class);
     }
 
-    public function turma(): BelongsTo
+    public function turmas(): BelongsToMany
     {
-        return $this->belongsTo(Turma::class);
+        return $this->belongsToMany(Turma::class, 'missao_turma');
     }
 }

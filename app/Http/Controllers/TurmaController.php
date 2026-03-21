@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Turma;
+use App\Models\Unidade;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -16,9 +17,11 @@ class TurmaController extends Controller
         $search = trim((string) $request->get('search', ''));
 
         $query = Turma::query()
+            ->with('unidade')
             ->when($search !== '', function ($q) use ($search) {
                 $q->where('nome', 'like', '%' . $search . '%')
-                    ->orWhere('periodo', 'like', '%' . $search . '%');
+                    ->orWhere('periodo', 'like', '%' . $search . '%')
+                    ->orWhereHas('unidade', fn ($u) => $u->where('titulo', 'like', '%' . $search . '%'));
             })
             ->orderBy('nome');
 
@@ -26,6 +29,7 @@ class TurmaController extends Controller
 
         return view('turmas.index', [
             'turmas' => $turmas,
+            'unidades' => Unidade::orderBy('titulo')->get(),
             'perPage' => $perPage,
             'search' => $search,
         ]);
@@ -34,10 +38,12 @@ class TurmaController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            'unidade_id' => ['required', 'exists:unidades,id'],
             'nome' => ['required', 'string', 'max:255'],
             'ativo' => ['required', 'in:0,1'],
             'periodo' => ['required', 'in:manha,tarde,noite'],
         ], [], [
+            'unidade_id' => 'escola / unidade',
             'nome' => 'nome da turma',
             'ativo' => 'ativo',
             'periodo' => 'período',
@@ -55,10 +61,12 @@ class TurmaController extends Controller
     public function update(Request $request, Turma $turma): RedirectResponse
     {
         $validated = $request->validate([
+            'unidade_id' => ['required', 'exists:unidades,id'],
             'nome' => ['required', 'string', 'max:255'],
             'ativo' => ['required', 'in:0,1'],
             'periodo' => ['required', 'in:manha,tarde,noite'],
         ], [], [
+            'unidade_id' => 'escola / unidade',
             'nome' => 'nome da turma',
             'ativo' => 'ativo',
             'periodo' => 'período',

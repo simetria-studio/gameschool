@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AlunoController extends Controller
@@ -39,12 +40,20 @@ class AlunoController extends Controller
             ? Unidade::orderBy('titulo')->get()
             : Unidade::where('id', $user->unidade_id)->orderBy('titulo')->get();
 
-        $turmas = Turma::orderBy('nome')->get();
+        $turmas = $isMaster
+            ? Turma::orderBy('nome')->get(['id', 'nome', 'unidade_id'])
+            : $this->turmasForUser($user)->get(['id', 'nome', 'unidade_id']);
+
+        $turmasPorUnidade = Turma::orderBy('nome')
+            ->get(['id', 'nome', 'unidade_id'])
+            ->groupBy('unidade_id')
+            ->map(fn ($g) => $g->map(fn (Turma $t) => ['id' => $t->id, 'nome' => $t->nome])->values());
 
         return view('alunos.index', [
             'alunos' => $alunos,
             'unidades' => $unidades,
             'turmas' => $turmas,
+            'turmasPorUnidadeJson' => $turmasPorUnidade,
             'perPage' => $perPage,
             'search' => $search,
             'canManageAllUnits' => $isMaster,
@@ -70,7 +79,10 @@ class AlunoController extends Controller
             'coins' => ['required', 'integer', 'min:0'],
             'xp' => ['required', 'integer', 'min:0'],
             'unidade_id' => ['required', 'exists:unidades,id'],
-            'turma_id' => ['required', 'exists:turmas,id'],
+            'turma_id' => [
+                'required',
+                Rule::exists('turmas', 'id')->where('unidade_id', (int) $request->input('unidade_id')),
+            ],
         ], [], [
             'genero' => 'gênero',
             'nome' => 'nome',
@@ -78,6 +90,13 @@ class AlunoController extends Controller
             'unidade_id' => 'unidade',
             'turma_id' => 'turma',
         ]);
+
+        if (($user->access_role ?? '') === 'professor') {
+            $allowed = $user->turmas()->pluck('id')->all();
+            if (! in_array((int) $validated['turma_id'], $allowed, true)) {
+                abort(403);
+            }
+        }
 
         $aluno = Aluno::create($validated);
 
@@ -120,7 +139,10 @@ class AlunoController extends Controller
             'coins' => ['required', 'integer', 'min:0'],
             'xp' => ['required', 'integer', 'min:0'],
             'unidade_id' => ['required', 'exists:unidades,id'],
-            'turma_id' => ['required', 'exists:turmas,id'],
+            'turma_id' => [
+                'required',
+                Rule::exists('turmas', 'id')->where('unidade_id', (int) $request->input('unidade_id')),
+            ],
         ], [], [
             'genero' => 'gênero',
             'nome' => 'nome',
@@ -128,6 +150,13 @@ class AlunoController extends Controller
             'unidade_id' => 'unidade',
             'turma_id' => 'turma',
         ]);
+
+        if (($user->access_role ?? '') === 'professor') {
+            $allowed = $user->turmas()->pluck('id')->all();
+            if (! in_array((int) $validated['turma_id'], $allowed, true)) {
+                abort(403);
+            }
+        }
 
         $aluno->update($validated);
 
@@ -179,7 +208,7 @@ class AlunoController extends Controller
         $unidades = $isMaster
             ? Unidade::orderBy('titulo')->get()
             : Unidade::where('id', $userAuth->unidade_id)->orderBy('titulo')->get();
-        $turmas = Turma::orderBy('nome')->get();
+        $turmas = $this->turmasForUser($userAuth)->get();
 
         $selectedUnidade = $request->input('unidade_id');
         $selectedTurma = $request->input('turma_id');
@@ -211,6 +240,29 @@ class AlunoController extends Controller
             'selectedUnidade' => $selectedUnidade,
             'selectedTurma' => $selectedTurma,
         ]);
+    }
+
+    private function turmasForUser($user)
+    {
+        $isMaster = ($user->access_role ?? 'professor') === 'master';
+        $isProfessor = ($user->access_role ?? 'professor') === 'professor';
+
+        $q = Turma::query()->orderBy('nome');
+
+        if ($isProfessor) {
+            $ids = $user->turmas()->pluck('id')->all();
+            if ($ids === []) {
+                return $q->whereRaw('1 = 0');
+            }
+
+            return $q->whereIn('id', $ids);
+        }
+
+        if (!$isMaster) {
+            return $q->where('unidade_id', $user->unidade_id);
+        }
+
+        return $q;
     }
 
     private function ensureAlunoUserAndToken(Aluno $aluno): void

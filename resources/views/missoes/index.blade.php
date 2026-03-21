@@ -58,11 +58,24 @@
                         <tr>
                             <td class="ps-4">{{ $missao->titulo }}</td>
                             <td>{{ $missao->unidade->titulo ?? '—' }}</td>
-                            <td>{{ $missao->turma->nome ?? '—' }}</td>
+                            <td>{{ $missao->turmas->pluck('nome')->filter()->join(', ') ?: '—' }}</td>
                             <td>{{ $missao->created_at->format('d/m/Y H:i') }}</td>
                             <td>{{ $missao->status === 'ativa' ? 'Ativa' : 'Inativa' }}</td>
                             <td class="pe-4 text-end">
-                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalMissao" data-action="edit" data-missao="{{ json_encode($missao) }}">
+                                @php
+                                    $missaoEdit = [
+                                        'id' => $missao->id,
+                                        'titulo' => $missao->titulo,
+                                        'unidade_id' => $missao->unidade_id,
+                                        'descricao' => $missao->descricao,
+                                        'xp' => $missao->xp,
+                                        'coins' => $missao->coins,
+                                        'status' => $missao->status,
+                                        'data_encerramento' => $missao->data_encerramento ? $missao->data_encerramento->format('Y-m-d') : null,
+                                        'turma_ids' => $missao->turmas->pluck('id')->values()->all(),
+                                    ];
+                                @endphp
+                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalMissao" data-action="edit" data-missao="{{ json_encode($missaoEdit) }}">
                                     <i class="bi bi-pencil me-1"></i> Editar
                                 </button>
                                 <form action="{{ route('missoes.destroy', $missao) }}" method="post" class="d-inline" onsubmit="return confirm('Deseja realmente excluir esta missão?');">
@@ -169,15 +182,15 @@
                             @enderror
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="missao_turma_id" class="form-label fw-semibold" style="color: var(--gs-text);">Turma</label>
-                            <select class="form-select @error('turma_id') is-invalid @enderror" id="missao_turma_id" name="turma_id" required>
-                                <option value="">Selecione...</option>
-                                @foreach($turmas as $t)
-                                    <option value="{{ $t->id }}" {{ old('turma_id') == $t->id ? 'selected' : '' }}>{{ $t->nome }}</option>
-                                @endforeach
+                            <label for="missao_turma_ids" class="form-label fw-semibold" style="color: var(--gs-text);">Turmas</label>
+                            <select class="form-select @error('turma_ids') is-invalid @enderror" id="missao_turma_ids" name="turma_ids[]" multiple size="6">
                             </select>
-                            @error('turma_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
+                            <small class="text-muted">Segure <kbd>Ctrl</kbd> (Windows) ou <kbd>Cmd</kbd> (Mac) para selecionar várias turmas da escola.</small>
+                            @error('turma_ids')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                            @enderror
+                            @error('turma_ids.*')
+                                <div class="invalid-feedback d-block">{{ $message }}</div>
                             @enderror
                         </div>
                     </div>
@@ -231,50 +244,90 @@
 
 @push('scripts')
 <script>
-document.getElementById('modalMissao').addEventListener('show.bs.modal', function (e) {
-    const button = e.relatedTarget;
-    const action = button.getAttribute('data-action');
-    const form = document.getElementById('formMissao');
-    const title = this.querySelector('#modalMissaoLabel');
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const methodInput = form.querySelector('input[name="_method"]');
-    if (methodInput) methodInput.remove();
+(function () {
+    const turmasPorUnidade = @json($turmasPorUnidadeJson ?? []);
 
-    if (action === 'edit' && button.getAttribute('data-missao')) {
-        const missao = JSON.parse(button.getAttribute('data-missao'));
-        title.textContent = 'Editar';
-        submitBtn.textContent = 'Salvar';
-        form.action = '{{ url("missoes") }}/' + missao.id;
-        form.insertAdjacentHTML('afterbegin', '<input type="hidden" name="_method" value="PUT">');
-
-        document.getElementById('missao_titulo').value = missao.titulo || '';
-        document.getElementById('missao_unidade_id').value = missao.unidade_id || (missao.unidade && missao.unidade.id) || '';
-        if (document.getElementById('missao_unidade_id_hidden')) {
-            document.getElementById('missao_unidade_id_hidden').value = missao.unidade_id || (missao.unidade && missao.unidade.id) || '';
-        }
-        document.getElementById('missao_turma_id').value = missao.turma_id || (missao.turma && missao.turma.id) || '';
-        document.getElementById('missao_descricao').value = missao.descricao || '';
-        document.getElementById('missao_xp').value = missao.xp ?? 0;
-        document.getElementById('missao_coins').value = missao.coins ?? 0;
-        document.getElementById('missao_status').value = missao.status || 'ativa';
-        document.getElementById('missao_data_encerramento').value = missao.data_encerramento ? missao.data_encerramento.split('T')[0] : '';
-    } else {
-        title.textContent = 'Adicionar';
-        submitBtn.textContent = 'Adicionar';
-        form.action = '{{ route("missoes.store") }}';
-        document.getElementById('missao_titulo').value = '';
-        document.getElementById('missao_unidade_id').value = '';
-        if (document.getElementById('missao_unidade_id_hidden')) {
-            document.getElementById('missao_unidade_id_hidden').value = '{{ old("unidade_id", $unidades->first()?->id ?? "") }}';
-            document.getElementById('missao_unidade_id').value = '{{ old("unidade_id", $unidades->first()?->id ?? "") }}';
-        }
-        document.getElementById('missao_turma_id').value = '';
-        document.getElementById('missao_descricao').value = '';
-        document.getElementById('missao_xp').value = '0';
-        document.getElementById('missao_coins').value = '0';
-        document.getElementById('missao_status').value = 'ativa';
-        document.getElementById('missao_data_encerramento').value = '';
+    function getUnidadeSelect() {
+        return document.getElementById('missao_unidade_id');
     }
-});
+
+    function getUnidadeId() {
+        const sel = getUnidadeSelect();
+        const hidden = document.getElementById('missao_unidade_id_hidden');
+        if (hidden && hidden.value) return String(hidden.value);
+        return sel ? String(sel.value || '') : '';
+    }
+
+    function fillTurmasSelect(selectedIds) {
+        const select = document.getElementById('missao_turma_ids');
+        if (!select) return;
+        const uid = getUnidadeId();
+        select.innerHTML = '';
+        const list = turmasPorUnidade[uid] || [];
+        list.forEach(function (t) {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = t.nome;
+            if (selectedIds && selectedIds.map(String).includes(String(t.id))) {
+                opt.selected = true;
+            }
+            select.appendChild(opt);
+        });
+    }
+
+    const unidadeSel = getUnidadeSelect();
+    if (unidadeSel) {
+        unidadeSel.addEventListener('change', function () {
+            fillTurmasSelect([]);
+        });
+    }
+
+    document.getElementById('modalMissao').addEventListener('show.bs.modal', function (e) {
+        const button = e.relatedTarget;
+        const action = button.getAttribute('data-action');
+        const form = document.getElementById('formMissao');
+        const title = this.querySelector('#modalMissaoLabel');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const methodInput = form.querySelector('input[name="_method"]');
+        if (methodInput) methodInput.remove();
+
+        if (action === 'edit' && button.getAttribute('data-missao')) {
+            const missao = JSON.parse(button.getAttribute('data-missao'));
+            title.textContent = 'Editar';
+            submitBtn.textContent = 'Salvar';
+            form.action = '{{ url("missoes") }}/' + missao.id;
+            form.insertAdjacentHTML('afterbegin', '<input type="hidden" name="_method" value="PUT">');
+
+            document.getElementById('missao_titulo').value = missao.titulo || '';
+            document.getElementById('missao_unidade_id').value = missao.unidade_id || '';
+            if (document.getElementById('missao_unidade_id_hidden')) {
+                document.getElementById('missao_unidade_id_hidden').value = missao.unidade_id || '';
+            }
+            fillTurmasSelect(missao.turma_ids || []);
+            document.getElementById('missao_descricao').value = missao.descricao || '';
+            document.getElementById('missao_xp').value = missao.xp ?? 0;
+            document.getElementById('missao_coins').value = missao.coins ?? 0;
+            document.getElementById('missao_status').value = missao.status || 'ativa';
+            document.getElementById('missao_data_encerramento').value = missao.data_encerramento ? String(missao.data_encerramento).split('T')[0] : '';
+        } else {
+            title.textContent = 'Adicionar';
+            submitBtn.textContent = 'Adicionar';
+            form.action = '{{ route("missoes.store") }}';
+            document.getElementById('missao_titulo').value = '';
+            document.getElementById('missao_unidade_id').value = '';
+            if (document.getElementById('missao_unidade_id_hidden')) {
+                const def = '{{ old("unidade_id", $unidades->first()?->id ?? "") }}';
+                document.getElementById('missao_unidade_id_hidden').value = def;
+                document.getElementById('missao_unidade_id').value = def;
+            }
+            fillTurmasSelect(@json(old('turma_ids', [])));
+            document.getElementById('missao_descricao').value = '';
+            document.getElementById('missao_xp').value = '0';
+            document.getElementById('missao_coins').value = '0';
+            document.getElementById('missao_status').value = 'ativa';
+            document.getElementById('missao_data_encerramento').value = '';
+        }
+    });
+})();
 </script>
 @endpush

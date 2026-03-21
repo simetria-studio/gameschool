@@ -45,7 +45,8 @@
             <table class="table gs-table table-hover align-middle mb-0">
                 <thead>
                     <tr>
-                        <th class="py-3 ps-4">Nome da turma</th>
+                        <th class="py-3 ps-4">Escola / Unidade</th>
+                        <th class="py-3">Nome da turma</th>
                         <th class="py-3">Ativo</th>
                         <th class="py-3">Período</th>
                         <th class="py-3">Criado em</th>
@@ -55,7 +56,8 @@
                 <tbody>
                     @forelse($turmas as $turma)
                         <tr>
-                            <td class="ps-4">{{ $turma->nome }}</td>
+                            <td class="ps-4">{{ $turma->unidade->titulo ?? '—' }}</td>
+                            <td>{{ $turma->nome }}</td>
                             <td>{{ $turma->ativo ? 'Sim' : 'Não' }}</td>
                             <td>@switch($turma->periodo)
                                 @case('manha') Manhã @break
@@ -80,7 +82,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-5 gs-text-secondary">
+                            <td colspan="6" class="text-center py-5 gs-text-secondary">
                                 Nenhum registro encontrado
                             </td>
                         </tr>
@@ -142,6 +144,18 @@
                     <input type="hidden" name="search" value="{{ $search }}">
 
                     <div class="mb-3">
+                        <label for="turma_unidade_id" class="form-label fw-semibold" style="color: var(--gs-text);">Escola / Unidade</label>
+                        <select class="form-select @error('unidade_id') is-invalid @enderror" id="turma_unidade_id" name="unidade_id" required>
+                            <option value="">Selecione...</option>
+                            @foreach(($unidades ?? collect()) as $u)
+                                <option value="{{ $u->id }}" {{ (string) old('unidade_id') === (string) $u->id ? 'selected' : '' }}>{{ $u->titulo }}</option>
+                            @endforeach
+                        </select>
+                        @error('unidade_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="mb-3">
                         <label for="turma_nome" class="form-label fw-semibold" style="color: var(--gs-text);">Nome da turma</label>
                         <input type="text" class="form-control @error('nome') is-invalid @enderror" id="turma_nome" name="nome" value="{{ old('nome') }}" required>
                         @error('nome')
@@ -196,6 +210,7 @@ document.getElementById('modalTurma').addEventListener('show.bs.modal', function
         form.action = '{{ url("turmas") }}/' + turma.id;
         form.insertAdjacentHTML('afterbegin', '<input type="hidden" name="_method" value="PUT">');
 
+        document.getElementById('turma_unidade_id').value = turma.unidade_id || '';
         document.getElementById('turma_nome').value = turma.nome || '';
         document.getElementById('turma_ativo').value = turma.ativo ? '1' : '0';
         document.getElementById('turma_periodo').value = turma.periodo || 'manha';
@@ -203,6 +218,7 @@ document.getElementById('modalTurma').addEventListener('show.bs.modal', function
         title.textContent = 'Adicionar';
         submitBtn.textContent = 'Adicionar';
         form.action = '{{ route("turmas.store") }}';
+        document.getElementById('turma_unidade_id').value = '';
         document.getElementById('turma_nome').value = '';
         document.getElementById('turma_ativo').value = '1';
         document.getElementById('turma_periodo').value = 'manha';

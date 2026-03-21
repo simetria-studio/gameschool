@@ -212,7 +212,7 @@
                         <select class="form-select @error('turma_id') is-invalid @enderror" id="aluno_turma_id" name="turma_id" required>
                             <option value="">Selecione...</option>
                             @foreach($turmas as $t)
-                                <option value="{{ $t->id }}" {{ old('turma_id', $turmas->first()?->id) == $t->id ? 'selected' : '' }}>{{ $t->nome }}</option>
+                                <option value="{{ $t->id }}" data-unidade-id="{{ $t->unidade_id }}" {{ old('turma_id', $turmas->first()?->id) == $t->id ? 'selected' : '' }}>{{ $t->nome }}</option>
                             @endforeach
                         </select>
                         @error('turma_id')
@@ -229,47 +229,83 @@
 
 @push('scripts')
 <script>
-document.getElementById('modalAluno').addEventListener('show.bs.modal', function (e) {
-    const button = e.relatedTarget;
-    const action = button.getAttribute('data-action');
-    const form = document.getElementById('formAluno');
-    const title = this.querySelector('#modalAlunoLabel');
-    const submitBtn = form.querySelector('button[type="submit"]');
-    const methodInput = form.querySelector('input[name="_method"]');
-    if (methodInput) methodInput.remove();
+(function () {
+    const canManageAllUnits = @json($canManageAllUnits ?? false);
+    const turmasPorUnidade = @json($turmasPorUnidadeJson ?? []);
 
-    if (action === 'edit' && button.getAttribute('data-aluno')) {
-        const aluno = JSON.parse(button.getAttribute('data-aluno'));
-        title.textContent = 'Editar';
-        submitBtn.textContent = 'Salvar';
-        form.action = '{{ url("alunos") }}/' + aluno.id;
-        form.insertAdjacentHTML('afterbegin', '<input type="hidden" name="_method" value="PUT">');
-
-        document.getElementById('aluno_genero').value = aluno.genero || 'masculino';
-        document.getElementById('aluno_nome').value = aluno.nome || '';
-        document.getElementById('aluno_data_nascimento').value = aluno.data_nascimento ? aluno.data_nascimento.split('T')[0] : '';
-        document.getElementById('aluno_coins').value = aluno.coins ?? 0;
-        document.getElementById('aluno_xp').value = aluno.xp ?? 0;
-        document.getElementById('aluno_unidade_id').value = aluno.unidade_id || (aluno.unidade && aluno.unidade.id) || '';
-        if (document.getElementById('aluno_unidade_id_hidden')) {
-            document.getElementById('aluno_unidade_id_hidden').value = aluno.unidade_id || (aluno.unidade && aluno.unidade.id) || '';
-        }
-        document.getElementById('aluno_turma_id').value = aluno.turma_id || (aluno.turma && aluno.turma.id) || '';
-    } else {
-        title.textContent = 'Adicionar';
-        submitBtn.textContent = 'Adicionar';
-        form.action = '{{ route("alunos.store") }}';
-        document.getElementById('aluno_genero').value = 'masculino';
-        document.getElementById('aluno_nome').value = '';
-        document.getElementById('aluno_data_nascimento').value = '';
-        document.getElementById('aluno_coins').value = '0';
-        document.getElementById('aluno_xp').value = '0';
-        document.getElementById('aluno_unidade_id').value = '{{ old("unidade_id", $unidades->first()?->id ?? "") }}';
-        if (document.getElementById('aluno_unidade_id_hidden')) {
-            document.getElementById('aluno_unidade_id_hidden').value = '{{ old("unidade_id", $unidades->first()?->id ?? "") }}';
-        }
-        document.getElementById('aluno_turma_id').value = '{{ old("turma_id", $turmas->first()?->id ?? "") }}';
+    function fillAlunoTurmasSelect(uid, selectedTurmaId) {
+        const sel = document.getElementById('aluno_turma_id');
+        if (!sel || !canManageAllUnits) return;
+        sel.innerHTML = '<option value="">Selecione...</option>';
+        const list = turmasPorUnidade[String(uid)] || [];
+        list.forEach(function (t) {
+            const opt = document.createElement('option');
+            opt.value = t.id;
+            opt.textContent = t.nome;
+            if (selectedTurmaId && String(selectedTurmaId) === String(t.id)) {
+                opt.selected = true;
+            }
+            sel.appendChild(opt);
+        });
     }
-});
+
+    const alunoUnidade = document.getElementById('aluno_unidade_id');
+    if (alunoUnidade && canManageAllUnits) {
+        alunoUnidade.addEventListener('change', function () {
+            fillAlunoTurmasSelect(this.value, null);
+        });
+    }
+
+    document.getElementById('modalAluno').addEventListener('show.bs.modal', function (e) {
+        const button = e.relatedTarget;
+        const action = button ? button.getAttribute('data-action') : 'add';
+        const form = document.getElementById('formAluno');
+        const title = this.querySelector('#modalAlunoLabel');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const methodInput = form.querySelector('input[name="_method"]');
+        if (methodInput) methodInput.remove();
+
+        if (action === 'edit' && button.getAttribute('data-aluno')) {
+            const aluno = JSON.parse(button.getAttribute('data-aluno'));
+            title.textContent = 'Editar';
+            submitBtn.textContent = 'Salvar';
+            form.action = '{{ url("alunos") }}/' + aluno.id;
+            form.insertAdjacentHTML('afterbegin', '<input type="hidden" name="_method" value="PUT">');
+
+            document.getElementById('aluno_genero').value = aluno.genero || 'masculino';
+            document.getElementById('aluno_nome').value = aluno.nome || '';
+            document.getElementById('aluno_data_nascimento').value = aluno.data_nascimento ? aluno.data_nascimento.split('T')[0] : '';
+            document.getElementById('aluno_coins').value = aluno.coins ?? 0;
+            document.getElementById('aluno_xp').value = aluno.xp ?? 0;
+            document.getElementById('aluno_unidade_id').value = aluno.unidade_id || (aluno.unidade && aluno.unidade.id) || '';
+            if (document.getElementById('aluno_unidade_id_hidden')) {
+                document.getElementById('aluno_unidade_id_hidden').value = aluno.unidade_id || (aluno.unidade && aluno.unidade.id) || '';
+            }
+            if (canManageAllUnits) {
+                fillAlunoTurmasSelect(aluno.unidade_id || (aluno.unidade && aluno.unidade.id), aluno.turma_id || (aluno.turma && aluno.turma.id));
+            } else {
+                document.getElementById('aluno_turma_id').value = aluno.turma_id || (aluno.turma && aluno.turma.id) || '';
+            }
+        } else {
+            title.textContent = 'Adicionar';
+            submitBtn.textContent = 'Adicionar';
+            form.action = '{{ route("alunos.store") }}';
+            document.getElementById('aluno_genero').value = 'masculino';
+            document.getElementById('aluno_nome').value = '';
+            document.getElementById('aluno_data_nascimento').value = '';
+            document.getElementById('aluno_coins').value = '0';
+            document.getElementById('aluno_xp').value = '0';
+            document.getElementById('aluno_unidade_id').value = '{{ old("unidade_id", $unidades->first()?->id ?? "") }}';
+            if (document.getElementById('aluno_unidade_id_hidden')) {
+                document.getElementById('aluno_unidade_id_hidden').value = '{{ old("unidade_id", $unidades->first()?->id ?? "") }}';
+            }
+            if (canManageAllUnits) {
+                fillAlunoTurmasSelect(document.getElementById('aluno_unidade_id').value, @json(old('turma_id')));
+            } else {
+                document.getElementById('aluno_turma_id').value = '{{ old("turma_id", $turmas->first()?->id ?? "") }}';
+            }
+        }
+    });
+})();
 </script>
 @endpush
