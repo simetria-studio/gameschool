@@ -4,14 +4,14 @@
 @section('breadcrumb', 'ALUNOS - CRACHÁS EM LOTE')
 
 @section('content')
-<div class="container-fluid">
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+<div class="cracha-print-root">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 no-print">
         <h1 class="h5 mb-0 fw-bold" style="color: var(--gs-text);">CRACHÁS EM LOTE</h1>
         <div class="d-flex gap-2">
             <a href="{{ route('alunos.index') }}" class="btn btn-outline-secondary btn-sm">Voltar</a>
             @if($alunos->count())
                 <button type="button" class="btn btn-gs-primary btn-sm" onclick="window.print();">
-                    <i class="bi bi-printer me-1"></i> Imprimir página
+                    <i class="bi bi-printer me-1"></i> Imprimir (8 por página)
                 </button>
             @endif
         </div>
@@ -50,87 +50,77 @@
     </div>
 
     @if(!$alunos->count())
-        <div class="gs-card p-4 text-center">
+        <div class="gs-card p-4 text-center no-print">
             <p class="gs-text-secondary mb-0">Selecione uma unidade e/ou turma para listar os alunos e imprimir os crachás.</p>
         </div>
     @else
-        <style>
-            @media print {
-                .no-print { display: none !important; }
-                body { background: #fff !important; }
-            }
-            .cracha-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-                gap: 1.5rem;
-            }
-            .cracha-card {
-                max-width: 320px;
-                margin: 0 auto;
-                border: 2px solid #ddd;
-                border-radius: 12px;
-                overflow: hidden;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                font-family: system-ui, sans-serif;
-            }
-            .cracha-header { background: #F2B233; color: #1A1A1A; padding: 0.75rem 1rem; font-weight: bold; font-size: 0.9rem; }
-            .cracha-body { padding: 1.25rem; background: #fff; text-align: center; }
-            .cracha-foto { width: 80px; height: 80px; border-radius: 50%; background: #eee; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; color: #999; font-size: 2rem; }
-            .cracha-nome { font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem; }
-            .cracha-info { font-size: 0.9rem; color: #6B6B6B; }
-            .cracha-qr { display: inline-block; margin-top: 0.75rem; }
-            .cracha-qr-hint { font-size: 0.75rem; color: #999; margin: 0.25rem 0 0; }
-        </style>
+        <p class="text-muted small no-print mb-3">Pré-visualização: cada bloco abaixo = 1 página na impressão com até 8 crachás (4 colunas × 2 linhas).</p>
 
-        <div class="cracha-grid">
-            @foreach($alunos as $aluno)
-                <div class="cracha-card">
-                    <div class="cracha-header">{{ config('app.name') }}</div>
-                    <div class="cracha-body">
-                        <div class="cracha-foto"><i class="bi bi-person-fill"></i></div>
-                        <div class="cracha-nome">{{ $aluno->nome }}</div>
-                        <div class="cracha-info">{{ $aluno->turma->nome ?? '—' }}</div>
-                        <div class="cracha-info">{{ $aluno->unidade->titulo ?? '—' }}</div>
-                        <div class="cracha-info mt-2">Coins: {{ $aluno->coins }} &bull; XP: {{ $aluno->xp }}</div>
-                        @if($aluno->user)
-                            <div class="cracha-qr">
-                                <canvas id="qrcode-{{ $aluno->id }}" width="120" height="120"></canvas>
-                                <p class="cracha-qr-hint">Escaneie para acessar o app</p>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            @endforeach
-        </div>
-
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-        <script>
-            (function () {
-                if (!window.QRious) return;
-
-                var itens = [
-                    @foreach($alunos as $aluno)
-                        @if($aluno->user && $aluno->user->qr_login_token)
-                            { id: {{ $aluno->id }}, url: @json(route('login.qr', $aluno->user->qr_login_token)) },
-                        @endif
-                    @endforeach
-                ];
-
-                itens.forEach(function (item) {
-                    var canvas = document.getElementById('qrcode-' + item.id);
-                    if (!canvas) return;
-
-                    new QRious({
-                        element: canvas,
-                        value: item.url,
-                        size: 120
-                    });
-                });
-            })();
-        </script>
+        @foreach($alunos->chunk(8) as $pagina)
+            <section class="cracha-print-page" aria-label="Página de crachás">
+                @foreach($pagina as $aluno)
+                    @include('alunos.partials.cracha-card', [
+                        'aluno' => $aluno,
+                        'canvasId' => 'qrcode-' . $aluno->id,
+                        'qrSize' => 240,
+                    ])
+                @endforeach
+            </section>
+        @endforeach
     @endif
 </div>
 @endsection
 
+@push('styles')
+    @include('alunos.partials.cracha-styles')
+    <style>
+        @media screen {
+            .cracha-print-page {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                grid-auto-rows: auto;
+                gap: 1rem;
+                padding: 1rem;
+                margin-bottom: 2rem;
+                background: #ececec;
+                border-radius: 10px;
+                border: 2px dashed #bbb;
+                justify-items: center;
+            }
+            .cracha-print-page .badge-card {
+                width: 100%;
+                max-width: 148px;
+                aspect-ratio: 54 / 86;
+                margin: 0;
+                min-height: 0;
+            }
+            .cracha-print-page .badge-card__canvas {
+                width: 86px !important;
+                height: 86px !important;
+            }
+            .cracha-print-page .badge-card__yellow {
+                padding: 8px 8px 6px;
+            }
+        }
+    </style>
+@endpush
+
+@push('scripts')
+@if($alunos->count())
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <script>
+        (function () {
+            if (!window.QRious) return;
+            document.querySelectorAll('canvas[data-cracha-qr]').forEach(function (canvas) {
+                new QRious({
+                    element: canvas,
+                    value: canvas.getAttribute('data-cracha-qr'),
+                    size: parseInt(canvas.getAttribute('width'), 10) || 180,
+                    background: '#ffffff',
+                    foreground: '#000000',
+                });
+            });
+        })();
+    </script>
+@endif
+@endpush
