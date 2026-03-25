@@ -13,7 +13,15 @@ class Pedido extends Model
         'qnt_atual',
         'coins',
         'status',
+        'processado_em',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'processado_em' => 'datetime',
+        ];
+    }
 
     public function aluno(): BelongsTo
     {

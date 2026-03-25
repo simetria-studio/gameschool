@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AppDataController;
 use App\Http\Controllers\Api\AuthApiController;
+use App\Http\Controllers\Api\PedidoApiController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -23,5 +24,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/atitudes', [AppDataController::class, 'atitudes']);
     Route::get('/loja-itens', [AppDataController::class, 'loja']);
     Route::get('/pedidos', [AppDataController::class, 'pedidos']);
+    Route::post('/pedidos', [PedidoApiController::class, 'store']);
+    Route::post('/pedidos/{pedido}/aprovar', [PedidoApiController::class, 'approve']);
     Route::get('/ranking', [AppDataController::class, 'ranking']);
 });

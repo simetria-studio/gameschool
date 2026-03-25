@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Aluno;
 use App\Models\LojaItem;
 use App\Models\Pedido;
+use App\Support\PedidoAprovacao;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class PedidoController extends Controller
@@ -108,7 +110,13 @@ class PedidoController extends Controller
         $produto = LojaItem::findOrFail((int) $validated['loja_item_id']);
         $this->authorizeByUnidade($isMaster, (int) $user->unidade_id, $aluno, $produto, $pedido);
 
-        $pedido->update($validated);
+        DB::transaction(function () use ($pedido, $validated) {
+            $pedido->update($validated);
+            $pedido->refresh();
+            if ($pedido->status === 'aprovado') {
+                PedidoAprovacao::aplicar($pedido);
+            }
+        });
 
         return redirect()
             ->route('pedidos.index', $request->only(['per_page', 'search']))
