@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AppDataController;
 use App\Http\Controllers\Api\AuthApiController;
+use App\Http\Controllers\Api\NotificacaoApiController;
 use App\Http\Controllers\Api\PedidoApiController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,4 +28,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/pedidos', [PedidoApiController::class, 'store']);
     Route::post('/pedidos/{pedido}/aprovar', [PedidoApiController::class, 'approve']);
     Route::get('/ranking', [AppDataController::class, 'ranking']);
+
+    Route::get('/notificacoes', [NotificacaoApiController::class, 'index']);
+    Route::post('/notificacoes/marcar-todas-lidas', [NotificacaoApiController::class, 'marcarTodasLidas']);
+    Route::post('/notificacoes/{id}/marcar-lida', [NotificacaoApiController::class, 'marcarLida'])
+        ->whereUuid('id');
 });

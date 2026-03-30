@@ -6,6 +6,7 @@ use App\Models\Aluno;
 use App\Models\Atitude;
 use App\Models\Turma;
 use App\Models\Unidade;
+use App\Support\NotificarRecompensaAluno;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -213,6 +214,8 @@ class AtitudeController extends Controller
 
         $aluno->increment('coins', $atitude->coins);
         $aluno->increment('xp', $atitude->xp);
+
+        NotificarRecompensaAluno::porAtitude($aluno, $atitude);
 
         return redirect()
             ->route('atitudes.index')

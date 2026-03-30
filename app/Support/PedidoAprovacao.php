@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Pedido;
+use App\Notifications\PedidoLojaAprovado;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -52,6 +53,12 @@ class PedidoAprovacao
             $pedido->produto->decrement('quantidade', $qnt);
 
             $pedido->forceFill(['processado_em' => now()])->save();
+
+            $pedido->aluno->notify(new PedidoLojaAprovado(
+                pedidoId: $pedido->id,
+                produtoTitulo: (string) $pedido->produto->titulo,
+                quantidade: $qnt,
+            ));
         });
     }
 }

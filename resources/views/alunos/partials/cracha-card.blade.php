@@ -14,7 +14,7 @@
         <div class="badge-card__pattern" aria-hidden="true"></div>
         <div class="badge-card__top">
             <div class="badge-card__logo-ring">
-                <img class="badge-card__logo" src="{{ asset('imgs/logo.png') }}" alt="" width="64" height="64">
+                <img class="badge-card__logo" src="{{ asset('imgs/icone.png') }}" alt="" width="64" height="64">
             </div>
             <div class="badge-card__brand">GO GAME SCHOOL</div>
         </div>
@@ -33,8 +33,8 @@
         </div>
         <div class="badge-card__student">
             <div class="badge-card__name">{{ $aluno->nome }}</div>
-            <div class="badge-card__unit">{{ $aluno->unidade->titulo ?? '—' }}</div>
+            <div class="badge-card__unit">{{ $aluno->unidade?->titulo ?? '—' }}</div>
         </div>
     </div>
-    <footer class="badge-card__footer">GÊNESIS INTERNATIONAL SCHOOL</footer>
+    <footer class="badge-card__footer">{{ $aluno->unidade?->titulo ?? '—' }}</footer>
 </article>
