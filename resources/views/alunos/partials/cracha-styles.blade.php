@@ -239,7 +239,7 @@
             display: block !important;
         }
 
-        body:has(.cracha-print-root) main.p-4 {
+        body:has(.cracha-print-root) main.gs-main-inner {
             padding: 0 !important;
         }
 
