@@ -9,10 +9,10 @@
         <a href="{{ route('atitudes.index') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i> Voltar</a>
     </div>
 
-    <div class="gs-card" style="max-width: 520px;">
+    <div class="gs-card" style="max-width: 640px;">
         <h5 class="fw-bold mb-3" style="color: var(--gs-text);">Recompensar: {{ $atitude->titulo }}</h5>
         <p class="gs-text-secondary small mb-4">
-            Selecione o aluno para aplicar esta atitude. Serão creditados <strong>{{ $atitude->coins }}</strong> coins e <strong>{{ $atitude->xp }}</strong> XP ao aluno.
+            Selecione um ou mais alunos. Serão creditados <strong>{{ $atitude->coins }}</strong> coins e <strong>{{ $atitude->xp }}</strong> XP para cada aluno escolhido.
         </p>
 
         @if (session('error'))
@@ -41,22 +41,31 @@
                 </select>
             </div>
 
+            @php $oldAlunoIds = array_map('strval', (array) old('aluno_ids', [])); @endphp
             <div class="mb-4">
-                <label for="aluno_id" class="form-label fw-semibold" style="color: var(--gs-text);">Aluno</label>
-                <select class="form-select @error('aluno_id') is-invalid @enderror" id="aluno_id" name="aluno_id" required>
-                    <option value="">Selecione o aluno...</option>
+                <label for="aluno_id" class="form-label fw-semibold" style="color: var(--gs-text);">Alunos</label>
+                <select class="form-select @error('aluno_ids') is-invalid @enderror @error('aluno_ids.*') is-invalid @enderror"
+                        id="aluno_id"
+                        name="aluno_ids[]"
+                        multiple
+                        size="10"
+                        required>
                     @foreach($alunos as $aluno)
                         <option value="{{ $aluno->id }}"
                                 data-unidade="{{ $aluno->unidade_id }}"
                                 data-turma="{{ $aluno->turma_id }}"
-                                {{ old('aluno_id') == $aluno->id ? 'selected' : '' }}>
+                                {{ in_array((string) $aluno->id, $oldAlunoIds, true) ? 'selected' : '' }}>
                             {{ $aluno->nome }} — {{ $aluno->turma->nome ?? '' }} ({{ $aluno->unidade->titulo ?? '' }})
                         </option>
                     @endforeach
                 </select>
-                @error('aluno_id')
-                    <div class="invalid-feedback">{{ $message }}</div>
+                <div class="form-text">Use Ctrl+clique (Windows) ou Cmd+clique (Mac) para selecionar vários. Filtre por unidade e turma acima.</div>
+                @error('aluno_ids')
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
                 @enderror
+                @foreach($errors->get('aluno_ids.*') as $message)
+                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                @endforeach
             </div>
             <button type="submit" class="btn btn-gs-primary">Aplicar atitude</button>
         </form>
@@ -73,32 +82,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!unidadeSelect || !turmaSelect || !alunoSelect) return;
 
-    const allAlunoOptions = Array.from(alunoSelect.options);
+    const selectedBeforeFilter = () => new Set(Array.from(alunoSelect.selectedOptions).map(o => o.value));
+    const optionTemplates = Array.from(alunoSelect.options)
+        .filter(o => o.value)
+        .map(o => o.cloneNode(true));
 
     function applyFilter() {
+        const selected = selectedBeforeFilter();
         const unidadeId = unidadeSelect.value;
         const turmaId = turmaSelect.value;
 
         alunoSelect.innerHTML = '';
-        const placeholder = document.createElement('option');
-        placeholder.value = '';
-        placeholder.textContent = 'Selecione o aluno...';
-        alunoSelect.appendChild(placeholder);
 
-        allAlunoOptions.forEach(opt => {
-            if (!opt.value) return;
-            const optUnidade = opt.getAttribute('data-unidade');
-            const optTurma = opt.getAttribute('data-turma');
-
+        optionTemplates.forEach(template => {
+            const optUnidade = template.getAttribute('data-unidade');
+            const optTurma = template.getAttribute('data-turma');
             const matchUnidade = !unidadeId || optUnidade === unidadeId;
             const matchTurma = !turmaId || optTurma === turmaId;
 
             if (matchUnidade && matchTurma) {
+                const opt = template.cloneNode(true);
+                opt.selected = selected.has(opt.value);
                 alunoSelect.appendChild(opt);
             }
         });
-
-        alunoSelect.value = '';
     }
 
     unidadeSelect.addEventListener('change', applyFilter);

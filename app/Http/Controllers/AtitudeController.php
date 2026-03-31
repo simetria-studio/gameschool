@@ -10,6 +10,7 @@ use App\Support\NotificarRecompensaAluno;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AtitudeController extends Controller
@@ -194,31 +195,48 @@ class AtitudeController extends Controller
         }
 
         $validated = $request->validate([
-            'aluno_id' => ['required', 'exists:alunos,id'],
-        ], [], ['aluno_id' => 'aluno']);
+            'aluno_ids' => ['required', 'array', 'min:1'],
+            'aluno_ids.*' => ['integer', 'exists:alunos,id'],
+        ], [], ['aluno_ids' => 'alunos']);
 
-        $aluno = Aluno::findOrFail($validated['aluno_id']);
+        $ids = array_values(array_unique(array_map('intval', $validated['aluno_ids'])));
 
-        if (!$isMaster) {
-            if ((int) $aluno->unidade_id !== (int) $user->unidade_id) {
-                abort(403);
+        $allowedTurmas = $isProfessor ? $user->turmas()->pluck('id')->all() : null;
+
+        $nomes = [];
+
+        DB::transaction(function () use ($ids, $isMaster, $isProfessor, $user, $atitude, $allowedTurmas, &$nomes): void {
+            foreach ($ids as $id) {
+                $aluno = Aluno::query()->whereKey($id)->lockForUpdate()->firstOrFail();
+
+                if (! $isMaster) {
+                    if ((int) $aluno->unidade_id !== (int) $user->unidade_id) {
+                        abort(403);
+                    }
+                }
+
+                if ($isProfessor) {
+                    if (! in_array((int) $aluno->turma_id, $allowedTurmas ?: [], true)) {
+                        abort(403);
+                    }
+                }
+
+                $aluno->increment('coins', $atitude->coins);
+                $aluno->increment('xp', $atitude->xp);
+
+                NotificarRecompensaAluno::porAtitude($aluno, $atitude);
+
+                $nomes[] = $aluno->nome;
             }
-        }
+        });
 
-        if ($isProfessor) {
-            $allowedTurmas = $user->turmas()->pluck('id')->all();
-            if (! in_array((int) $aluno->turma_id, $allowedTurmas, true)) {
-                abort(403);
-            }
-        }
-
-        $aluno->increment('coins', $atitude->coins);
-        $aluno->increment('xp', $atitude->xp);
-
-        NotificarRecompensaAluno::porAtitude($aluno, $atitude);
+        $qtd = count($ids);
+        $lista = $qtd <= 3
+            ? implode(', ', $nomes)
+            : implode(', ', array_slice($nomes, 0, 3)).' e mais '.($qtd - 3).' aluno(s)';
 
         return redirect()
             ->route('atitudes.index')
-            ->with('success', "Atitude \"{$atitude->titulo}\" aplicada ao aluno {$aluno->nome}. Coins: {$atitude->coins}, XP: {$atitude->xp}.");
+            ->with('success', "Atitude \"{$atitude->titulo}\" aplicada a {$qtd} aluno(s) ({$lista}). ".(int) $atitude->coins.' coins e '.(int) $atitude->xp.' XP por aluno.');
     }
 }
