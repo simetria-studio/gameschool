@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
 use App\Models\User;
+use App\Support\AutenticacaoUtil;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,12 +25,11 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request): RedirectResponse
     {
-        $credentials = [
-            'username' => $request->validated('username'),
-            'password' => $request->validated('password'),
-        ];
-
-        if (Auth::attempt($credentials, (bool) $request->boolean('remember'))) {
+        if (AutenticacaoUtil::tentarLogin(
+            $request->validated('username'),
+            $request->validated('password'),
+            (bool) $request->boolean('remember')
+        )) {
             $request->session()->regenerate();
 
             return redirect()->intended(route('dashboard'));

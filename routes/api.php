@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AppDataController;
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\NotificacaoApiController;
 use App\Http\Controllers\Api\PedidoApiController;
+use App\Http\Controllers\Api\QuizApiController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('auth')->group(function () {
@@ -22,6 +23,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/turmas', [AppDataController::class, 'turmas']);
     Route::get('/alunos', [AppDataController::class, 'alunos']);
     Route::get('/missoes', [AppDataController::class, 'missoes']);
+    Route::get('/quizzes', [QuizApiController::class, 'index']);
+    Route::get('/quizzes/{quiz}', [QuizApiController::class, 'show']);
+    Route::post('/quizzes/{quiz}/tentativas', [QuizApiController::class, 'storeTentativa']);
+    Route::get('/quizzes/{quiz}/tentativas', [QuizApiController::class, 'tentativas']);
+    Route::get('/quizzes/{quiz}/tentativas/{tentativa}', [QuizApiController::class, 'showTentativa']);
     Route::get('/atitudes', [AppDataController::class, 'atitudes']);
     Route::get('/loja-itens', [AppDataController::class, 'loja']);
     Route::get('/pedidos', [AppDataController::class, 'pedidos']);

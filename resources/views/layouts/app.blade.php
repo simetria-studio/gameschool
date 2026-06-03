@@ -269,6 +269,10 @@
                             <i class="bi bi-flag"></i>
                             <span>MISSÕES</span>
                         </a>
+                        <a class="nav-link {{ request()->routeIs('quizzes.*') ? 'active' : '' }}" href="{{ route('quizzes.index') }}">
+                            <i class="bi bi-patch-question"></i>
+                            <span>QUIZZES</span>
+                        </a>
                         <a class="nav-link {{ request()->routeIs('atitudes.*') ? 'active' : '' }}" href="{{ route('atitudes.index') }}">
                             <i class="bi bi-hand-thumbs-up"></i>
                             <span>ATITUDES</span>

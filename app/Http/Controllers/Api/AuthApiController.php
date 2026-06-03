@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\AutenticacaoUtil;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,7 +20,7 @@ class AuthApiController extends Controller
             'device_name' => ['nullable', 'string', 'max:100'],
         ]);
 
-        if (! Auth::attempt(['username' => $validated['username'], 'password' => $validated['password']])) {
+        if (! AutenticacaoUtil::tentarLogin($validated['username'], $validated['password'])) {
             throw ValidationException::withMessages([
                 'username' => ['Credenciais inválidas.'],
             ]);

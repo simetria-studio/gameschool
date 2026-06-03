@@ -8,7 +8,7 @@
         {{-- Logo e título --}}
         <div class="text-center mb-5 overflow-hidden">
             <img src="{{ asset('imgs/logo.png') }}" alt="Game School" class="d-block mx-auto mb-3" style="max-height: 64px; max-width: 100%; width: auto; height: auto; object-fit: contain;">
-            <p class="mb-0 small" style="color: var(--gs-text-secondary);">Entre com seu usuário e senha</p>
+            <p class="mb-0 small" style="color: var(--gs-text-secondary);">Entre com seu usuário, e-mail e senha</p>
         </div>
 
         @if ($errors->any())
@@ -22,13 +22,13 @@
         <form method="POST" action="{{ route('login') }}">
             @csrf
             <div class="mb-3">
-                <label for="username" class="form-label fw-semibold" style="color: var(--gs-text); font-size: 0.9rem;">Usuário</label>
+                <label for="username" class="form-label fw-semibold" style="color: var(--gs-text); font-size: 0.9rem;">Usuário ou e-mail</label>
                 <input type="text"
                        class="form-control form-control-lg @error('username') is-invalid @enderror"
                        id="username"
                        name="username"
                        value="{{ old('username') }}"
-                       placeholder="Digite seu usuário"
+                       placeholder="Digite seu usuário ou e-mail"
                        autocomplete="username"
                        autofocus
                        required>
