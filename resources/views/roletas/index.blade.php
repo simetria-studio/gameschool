@@ -8,7 +8,7 @@
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
         <div>
             <h1 class="h5 mb-0 fw-bold">ROLETAS PREMIADAS</h1>
-            <p class="small gs-text-secondary mb-0">1 giro grátis por semana · giros extras com coins</p>
+            <p class="small gs-text-secondary mb-0">Configure giros grátis por semana ou roleta totalmente grátis</p>
         </div>
         <div class="d-flex gap-2">
             <a href="{{ route('roleta-colecionaveis.index') }}" class="btn btn-outline-secondary btn-sm">Personagens e figurinhas</a>
@@ -21,7 +21,7 @@
 
     <div class="gs-card p-0 overflow-hidden">
         <table class="table gs-table table-hover mb-0">
-            <thead><tr><th class="ps-4">Título</th><th>Unidade</th><th>Turmas</th><th>Segmentos</th><th>Custo</th><th>Status</th><th class="pe-4 text-end">Ações</th></tr></thead>
+            <thead><tr><th class="ps-4">Título</th><th>Unidade</th><th>Turmas</th><th>Segmentos</th><th>Giros</th><th>Status</th><th class="pe-4 text-end">Ações</th></tr></thead>
             <tbody>
                 @forelse($roletas as $roleta)
                     <tr>
@@ -29,11 +29,24 @@
                         <td>{{ $roleta->unidade->titulo ?? '—' }}</td>
                         <td>{{ $roleta->turmas->pluck('nome')->join(', ') ?: '—' }}</td>
                         <td>{{ $roleta->segmentos_count }}</td>
-                        <td>{{ $roleta->custo_coins }} coins</td>
+                        <td>
+                            @if ($roleta->somente_gratis)
+                                <span class="badge text-bg-success">Grátis ilimitado</span>
+                            @elseif ((int) $roleta->giros_gratis_por_semana > 0)
+                                {{ $roleta->giros_gratis_por_semana }}/semana
+                                @if ((int) $roleta->custo_coins > 0)
+                                    <span class="text-muted">· {{ $roleta->custo_coins }} coins</span>
+                                @endif
+                            @elseif ((int) $roleta->custo_coins > 0)
+                                {{ $roleta->custo_coins }} coins
+                            @else
+                                —
+                            @endif
+                        </td>
                         <td>{{ $roleta->status === 'ativa' ? 'Ativa' : 'Inativa' }}</td>
                         <td class="pe-4 text-end">
                             <a href="{{ route('roletas.segmentos', $roleta) }}" class="btn btn-sm btn-outline-secondary">Prêmios</a>
-                            @php $edit = array_merge($roleta->only(['id','titulo','unidade_id','descricao','custo_coins','status']), ['data_encerramento'=>$roleta->data_encerramento?->format('Y-m-d'), 'turma_ids'=>$roleta->turmas->pluck('id')->values()->all()]); @endphp
+                            @php $edit = array_merge($roleta->only(['id','titulo','unidade_id','descricao','custo_coins','giros_gratis_por_semana','somente_gratis','status']), ['data_encerramento'=>$roleta->data_encerramento?->format('Y-m-d'), 'turma_ids'=>$roleta->turmas->pluck('id')->values()->all()]); @endphp
                             <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalRoleta" data-action="edit" data-roleta="{{ json_encode($edit) }}">Editar</button>
                             <form action="{{ route('roletas.destroy', $roleta) }}" method="post" class="d-inline" onsubmit="return confirm('Excluir roleta?');">@csrf @method('DELETE')<button class="btn btn-sm btn-danger">Excluir</button></form>
                         </td>
@@ -65,9 +78,27 @@
                     <div class="col-md-6 mb-3"><label class="form-label fw-semibold">Turmas</label><select name="turma_ids[]" id="roleta_turma_ids" class="form-select" multiple size="5"></select></div>
                 </div>
                 <div class="mb-3"><label class="form-label fw-semibold">Descrição</label><textarea name="descricao" id="roleta_descricao" class="form-control" rows="2"></textarea></div>
-                <div class="row">
-                    <div class="col-md-4 mb-3"><label class="form-label fw-semibold">Custo giro pago (coins)</label><input type="number" name="custo_coins" id="roleta_custo" class="form-control" value="50" min="1" required></div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input type="hidden" name="somente_gratis" value="0">
+                        <input type="checkbox" name="somente_gratis" value="1" id="roleta_somente_gratis" class="form-check-input">
+                        <label class="form-check-label fw-semibold" for="roleta_somente_gratis">Roleta totalmente grátis (giros ilimitados, sem custo)</label>
+                    </div>
+                </div>
+                <div class="row" id="roleta_cobranca_wrap">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-semibold">Giros grátis por semana</label>
+                        <input type="number" name="giros_gratis_por_semana" id="roleta_giros_gratis" class="form-control" value="1" min="0" max="365" required>
+                        <div class="form-text">0 = nenhum giro grátis</div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-semibold">Custo giro pago (coins)</label>
+                        <input type="number" name="custo_coins" id="roleta_custo" class="form-control" value="50" min="0" required>
+                        <div class="form-text">0 = só giros grátis</div>
+                    </div>
                     <div class="col-md-4 mb-3"><label class="form-label fw-semibold">Status</label><select name="status" id="roleta_status" class="form-select"><option value="ativa">Ativa</option><option value="inativa">Inativa</option></select></div>
+                </div>
+                <div class="row">
                     <div class="col-md-4 mb-3"><label class="form-label fw-semibold">Encerramento</label><input type="date" name="data_encerramento" id="roleta_data" class="form-control"></div>
                 </div>
                 <button type="submit" class="btn btn-gs-primary w-100">Salvar</button>
@@ -84,6 +115,14 @@
     function getUid(){ const h=document.getElementById('roleta_unidade_id_hidden'); if(h&&h.value)return h.value; const s=document.getElementById('roleta_unidade_id'); return s?s.value:''; }
     function fillTurmas(ids){ const sel=document.getElementById('roleta_turma_ids'); sel.innerHTML=''; (turmasPorUnidade[getUid()]||[]).forEach(function(t){ const o=document.createElement('option'); o.value=t.id; o.textContent=t.nome; if(ids&&ids.map(String).includes(String(t.id)))o.selected=true; sel.appendChild(o); }); }
     document.getElementById('roleta_unidade_id')?.addEventListener('change',()=>fillTurmas([]));
+    function toggleSomenteGratis(){
+        const on=document.getElementById('roleta_somente_gratis').checked;
+        const wrap=document.getElementById('roleta_cobranca_wrap');
+        wrap.style.opacity=on?'0.5':'1';
+        document.getElementById('roleta_giros_gratis').disabled=on;
+        document.getElementById('roleta_custo').disabled=on;
+    }
+    document.getElementById('roleta_somente_gratis').addEventListener('change',toggleSomenteGratis);
     document.getElementById('modalRoleta').addEventListener('show.bs.modal',function(e){
         const btn=e.relatedTarget, form=document.getElementById('formRoleta');
         form.querySelector('input[name="_method"]')?.remove();
@@ -93,15 +132,22 @@
             form.insertAdjacentHTML('afterbegin','<input type="hidden" name="_method" value="PUT">');
             document.getElementById('roleta_titulo').value=r.titulo||'';
             document.getElementById('roleta_descricao').value=r.descricao||'';
-            document.getElementById('roleta_custo').value=r.custo_coins||50;
+            document.getElementById('roleta_custo').value=r.custo_coins??50;
+            document.getElementById('roleta_giros_gratis').value=r.giros_gratis_por_semana??1;
+            document.getElementById('roleta_somente_gratis').checked=!!r.somente_gratis;
             document.getElementById('roleta_status').value=r.status||'ativa';
             document.getElementById('roleta_data').value=r.data_encerramento||'';
             if(document.getElementById('roleta_unidade_id_hidden'))document.getElementById('roleta_unidade_id_hidden').value=r.unidade_id;
             if(document.getElementById('roleta_unidade_id'))document.getElementById('roleta_unidade_id').value=r.unidade_id;
             fillTurmas(r.turma_ids||[]);
+            toggleSomenteGratis();
         } else {
             form.action='{{ route('roletas.store') }}';
+            document.getElementById('roleta_somente_gratis').checked=false;
+            document.getElementById('roleta_giros_gratis').value=1;
+            document.getElementById('roleta_custo').value=50;
             fillTurmas([]);
+            toggleSomenteGratis();
         }
     });
 })();

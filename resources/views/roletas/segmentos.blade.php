@@ -11,7 +11,20 @@
             <a href="{{ route('roleta-colecionaveis.index') }}" class="btn btn-sm btn-outline-secondary">Personagens e figurinhas</a>
         </div>
         <h1 class="h5 fw-bold mb-0">{{ $roleta->titulo }}</h1>
-        <p class="small gs-text-secondary">Configure os segmentos da roleta · giro grátis: 1x/semana · pago: {{ $roleta->custo_coins }} coins</p>
+        <p class="small gs-text-secondary">
+            Configure os segmentos da roleta ·
+            @if ($roleta->somente_gratis)
+                <strong>totalmente grátis</strong> (giros ilimitados)
+            @elseif ((int) $roleta->giros_gratis_por_semana > 0 && (int) $roleta->custo_coins > 0)
+                {{ $roleta->giros_gratis_por_semana }} giro(s) grátis/semana · extras: {{ $roleta->custo_coins }} coins
+            @elseif ((int) $roleta->giros_gratis_por_semana > 0)
+                {{ $roleta->giros_gratis_por_semana }} giro(s) grátis/semana
+            @elseif ((int) $roleta->custo_coins > 0)
+                somente pago: {{ $roleta->custo_coins }} coins
+            @else
+                configure giros na edição da roleta
+            @endif
+        </p>
     </div>
 
     @if (session('success'))<div class="alert alert-success py-2 small">{{ session('success') }}</div>@endif

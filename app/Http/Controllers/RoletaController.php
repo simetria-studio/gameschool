@@ -183,19 +183,38 @@ class RoletaController extends Controller
 
     private function validateRoleta(Request $request): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'titulo' => ['required', 'string', 'max:255'],
             'unidade_id' => ['required', 'exists:unidades,id'],
             'turma_ids' => ['required', 'array', 'min:1'],
             'turma_ids.*' => ['integer', 'exists:turmas,id'],
             'descricao' => ['nullable', 'string', 'max:2000'],
-            'custo_coins' => ['required', 'integer', 'min:1'],
+            'custo_coins' => ['required', 'integer', 'min:0'],
+            'giros_gratis_por_semana' => ['required', 'integer', 'min:0', 'max:365'],
+            'somente_gratis' => ['sometimes', 'boolean'],
             'status' => ['required', 'in:ativa,inativa'],
             'data_encerramento' => ['nullable', 'date'],
         ], [], [
             'titulo' => 'título',
             'custo_coins' => 'custo em coins',
+            'giros_gratis_por_semana' => 'giros grátis por semana',
+            'somente_gratis' => 'somente grátis',
         ]);
+
+        $validated['somente_gratis'] = $request->boolean('somente_gratis');
+
+        if ($validated['somente_gratis']) {
+            $validated['custo_coins'] = 0;
+            $validated['giros_gratis_por_semana'] = 0;
+        } elseif ((int) $validated['custo_coins'] < 1 && (int) $validated['giros_gratis_por_semana'] < 1) {
+            throw ValidationException::withMessages([
+                'custo_coins' => 'Informe giros grátis por semana ou custo do giro pago.',
+            ]);
+        } elseif ((int) $validated['custo_coins'] < 1 && (int) $validated['giros_gratis_por_semana'] >= 1) {
+            $validated['custo_coins'] = 0;
+        }
+
+        return $validated;
     }
 
     private function validateSegmento(Request $request, Roleta $roleta): array

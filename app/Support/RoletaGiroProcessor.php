@@ -8,7 +8,6 @@ use App\Models\RoletaBauItem;
 use App\Models\RoletaGiro;
 use App\Models\RoletaSegmento;
 use App\Notifications\RoletaPremioGanho;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -16,7 +15,11 @@ class RoletaGiroProcessor
 {
     public static function girar(Roleta $roleta, Aluno $aluno, string $tipo): RoletaGiro
     {
-        $tipo = $tipo === 'pago' ? 'pago' : 'gratis';
+        if ($roleta->somente_gratis) {
+            $tipo = 'gratis';
+        } else {
+            $tipo = $tipo === 'pago' ? 'pago' : 'gratis';
+        }
 
         $roleta->load(['segmentos.item', 'segmentos.bauItens.item']);
 
@@ -88,17 +91,50 @@ class RoletaGiroProcessor
 
     public static function statusGiroGratis(Roleta $roleta, Aluno $aluno): array
     {
+        if ($roleta->somente_gratis) {
+            return [
+                'disponivel' => true,
+                'ilimitado' => true,
+                'somente_gratis' => true,
+                'restantes' => null,
+                'limite_semana' => null,
+                'usados_semana' => null,
+                'proximo_gratis_em' => null,
+            ];
+        }
+
+        $limite = (int) $roleta->giros_gratis_por_semana;
         $inicioSemana = now()->startOfWeek();
-        $usou = RoletaGiro::query()
+
+        if ($limite <= 0) {
+            return [
+                'disponivel' => false,
+                'ilimitado' => false,
+                'somente_gratis' => false,
+                'restantes' => 0,
+                'limite_semana' => 0,
+                'usados_semana' => 0,
+                'proximo_gratis_em' => null,
+            ];
+        }
+
+        $usados = RoletaGiro::query()
             ->where('roleta_id', $roleta->id)
             ->where('aluno_id', $aluno->id)
             ->where('tipo', 'gratis')
             ->where('created_at', '>=', $inicioSemana)
-            ->exists();
+            ->count();
+
+        $restantes = max(0, $limite - $usados);
 
         return [
-            'disponivel' => ! $usou,
-            'proximo_gratis_em' => $usou ? $inicioSemana->copy()->addWeek()->toIso8601String() : null,
+            'disponivel' => $restantes > 0,
+            'ilimitado' => false,
+            'somente_gratis' => false,
+            'restantes' => $restantes,
+            'limite_semana' => $limite,
+            'usados_semana' => $usados,
+            'proximo_gratis_em' => $restantes > 0 ? null : $inicioSemana->copy()->addWeek()->toIso8601String(),
         ];
     }
 
@@ -106,11 +142,21 @@ class RoletaGiroProcessor
     {
         $status = self::statusGiroGratis($roleta, $aluno);
 
-        if (! $status['disponivel']) {
+        if ($status['disponivel']) {
+            return;
+        }
+
+        $limite = (int) ($status['limite_semana'] ?? 0);
+
+        if ($limite <= 0) {
             throw ValidationException::withMessages([
-                'tipo' => ['Você já usou seu giro grátis desta semana.'],
+                'tipo' => ['Esta roleta não possui giros grátis. Use um giro pago.'],
             ]);
         }
+
+        throw ValidationException::withMessages([
+            'tipo' => ["Você já usou seus {$limite} giro(s) grátis desta semana."],
+        ]);
     }
 
     /**
@@ -164,7 +210,6 @@ class RoletaGiroProcessor
 
         $quantidade = random_int(2, min(4, max(2, $pool->count())));
         $premios = [];
-        $sorteados = [];
 
         for ($i = 0; $i < $quantidade; $i++) {
             /** @var RoletaBauItem $bauItem */
@@ -177,7 +222,6 @@ class RoletaGiroProcessor
 
             InventarioAluno::adicionar($aluno, $item);
             $premios[] = self::formatPremioItem($item);
-            $sorteados[] = $item->id;
         }
 
         return $premios;

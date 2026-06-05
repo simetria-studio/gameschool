@@ -39,8 +39,8 @@ Rotas autenticadas: header `Authorization: Bearer {token}` (Laravel Sanctum).
 | GET | `/quizzes/{id}/tentativas/{tentativa_id}` | Detalhe de uma tentativa com todas as respostas. |
 | GET | `/roletas` | Lista roletas ativas (paginado). Aluno: da sua turma; inclui status do giro grátis. |
 | GET | `/roletas/{id}` | Segmentos da roleta (para desenhar a UI). |
-| GET | `/roletas/{id}/status` | Giro grátis disponível, custo em coins, saldo do aluno. |
-| POST | `/roletas/{id}/giros` | Gira a roleta. Body: `tipo` = `gratis` \| `pago`. Retorna prêmio e saldo. |
+| GET | `/roletas/{id}/status` | Giro grátis disponível, limite semanal, custo em coins, saldo do aluno. |
+| POST | `/roletas/{id}/giros` | Gira a roleta. Body: `tipo` = `gratis` \| `pago` (omitido se `somente_gratis`). Retorna prêmio e saldo. |
 | GET | `/roletas/{id}/giros` | Histórico de giros. |
 | GET | `/inventario` | Inventário do aluno. Query: `tipo` = `personagem` \| `figurinha` \| `emote`; staff: `id_aluno`. Retorna resumo, categorias e `imagem_url`. |
 | GET | `/inventario/{aluno_item_id}` | Detalhe de um item do inventário (com datas). |
@@ -77,12 +77,19 @@ Rotas autenticadas: header `Authorization: Bearer {token}` (Laravel Sanctum).
     "titulo": "Roleta Premiada",
     "descricao": "Gire e ganhe prêmios!",
     "custo_coins": 50,
+    "giros_gratis_por_semana": 1,
+    "somente_gratis": false,
     "status": "ativa",
     "total_segmentos": 6,
     "unidade": { "id": 1, "titulo": "Escola Demo" },
     "turmas": [{ "id": 2, "nome": "3º Ano A" }],
     "giro_gratis": {
       "disponivel": true,
+      "ilimitado": false,
+      "somente_gratis": false,
+      "restantes": 1,
+      "limite_semana": 1,
+      "usados_semana": 0,
       "proximo_gratis_em": null
     },
     "segmentos": [
@@ -160,17 +167,33 @@ Rotas autenticadas: header `Authorization: Bearer {token}` (Laravel Sanctum).
   "data": {
     "giro_gratis": {
       "disponivel": true,
+      "ilimitado": false,
+      "somente_gratis": false,
+      "restantes": 1,
+      "limite_semana": 1,
+      "usados_semana": 0,
       "proximo_gratis_em": null
     },
+    "somente_gratis": false,
+    "giros_gratis_por_semana": 1,
     "custo_coins": 50,
     "coins_aluno": 120
   }
 }
 ```
 
+**Modos configuráveis no painel:**
+
+| Config | Comportamento |
+|--------|----------------|
+| `somente_gratis: true` | Giros ilimitados, sem custo. Body do POST pode omitir `tipo`. |
+| `giros_gratis_por_semana: N` | N giros grátis por semana; depois usa `custo_coins`. |
+| `giros_gratis_por_semana: 0` | Sem giros grátis; só giro pago (`tipo: "pago"`). |
+| `custo_coins: 0` | Só giros grátis (até o limite semanal). |
+
 ### Exemplo: `POST /roletas/1/giros`
 
-Body: `{ "tipo": "gratis" }` ou `{ "tipo": "pago" }`
+Body: `{ "tipo": "gratis" }` ou `{ "tipo": "pago" }` (se `somente_gratis`, envie `{}` ou `"gratis"`)
 
 ```json
 {

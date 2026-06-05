@@ -14,12 +14,16 @@ class Roleta extends Model
         'titulo',
         'descricao',
         'custo_coins',
+        'giros_gratis_por_semana',
+        'somente_gratis',
         'status',
         'data_encerramento',
     ];
 
     protected $casts = [
         'data_encerramento' => 'date',
+        'somente_gratis' => 'boolean',
+        'giros_gratis_por_semana' => 'integer',
     ];
 
     public function unidade(): BelongsTo

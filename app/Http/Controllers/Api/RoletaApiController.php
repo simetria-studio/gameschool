@@ -74,6 +74,8 @@ class RoletaApiController extends Controller
         return response()->json([
             'data' => [
                 'giro_gratis' => $gratis,
+                'somente_gratis' => (bool) $roleta->somente_gratis,
+                'giros_gratis_por_semana' => (int) $roleta->giros_gratis_por_semana,
                 'custo_coins' => (int) $roleta->custo_coins,
                 'coins_aluno' => (int) $user->aluno->coins,
             ],
@@ -90,11 +92,16 @@ class RoletaApiController extends Controller
 
         $this->authorizeAccess($user, $roleta);
 
-        $validated = $request->validate([
-            'tipo' => ['required', 'in:gratis,pago'],
-        ], [], ['tipo' => 'tipo de giro']);
+        if ($roleta->somente_gratis) {
+            $tipo = 'gratis';
+        } else {
+            $validated = $request->validate([
+                'tipo' => ['required', 'in:gratis,pago'],
+            ], [], ['tipo' => 'tipo de giro']);
+            $tipo = $validated['tipo'];
+        }
 
-        $giro = RoletaGiroProcessor::girar($roleta, $user->aluno, $validated['tipo']);
+        $giro = RoletaGiroProcessor::girar($roleta, $user->aluno, $tipo);
         $user->aluno->refresh();
 
         return response()->json([
@@ -142,6 +149,8 @@ class RoletaApiController extends Controller
             'titulo' => $roleta->titulo,
             'descricao' => $roleta->descricao,
             'custo_coins' => (int) $roleta->custo_coins,
+            'giros_gratis_por_semana' => (int) $roleta->giros_gratis_por_semana,
+            'somente_gratis' => (bool) $roleta->somente_gratis,
             'status' => $roleta->status,
             'total_segmentos' => (int) ($roleta->segmentos_count ?? 0),
             'unidade' => $roleta->unidade ? ['id' => $roleta->unidade->id, 'titulo' => $roleta->unidade->titulo] : null,
