@@ -273,6 +273,22 @@
                             <i class="bi bi-patch-question"></i>
                             <span>QUIZZES</span>
                         </a>
+                        <a class="nav-link {{ request()->routeIs('roletas.*') ? 'active' : '' }}" href="{{ route('roletas.index') }}">
+                            <i class="bi bi-circle-half"></i>
+                            <span>ROLETAS</span>
+                        </a>
+                        <a class="nav-link {{ request()->routeIs('roleta-colecionaveis.*') ? 'active' : '' }}" href="{{ route('roleta-colecionaveis.index') }}">
+                            <i class="bi bi-images"></i>
+                            <span>PERSONAGENS / FIGURINHAS</span>
+                        </a>
+                        <a class="nav-link {{ request()->routeIs('roleta-itens.*') ? 'active' : '' }}" href="{{ route('roleta-itens.index') }}">
+                            <i class="bi bi-emoji-smile"></i>
+                            <span>EMOTES</span>
+                        </a>
+                        <a class="nav-link {{ request()->routeIs('inventarios.*') ? 'active' : '' }}" href="{{ route('inventarios.index') }}">
+                            <i class="bi bi-backpack"></i>
+                            <span>INVENTÁRIO</span>
+                        </a>
                         <a class="nav-link {{ request()->routeIs('atitudes.*') ? 'active' : '' }}" href="{{ route('atitudes.index') }}">
                             <i class="bi bi-hand-thumbs-up"></i>
                             <span>ATITUDES</span>

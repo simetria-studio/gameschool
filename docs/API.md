@@ -37,10 +37,235 @@ Rotas autenticadas: header `Authorization: Bearer {token}` (Laravel Sanctum).
 | POST | `/quizzes/{id}/tentativas` | Aluno envia respostas: `respostas[]` com `pergunta_id`, `opcao_id`. Grava em `quiz_respostas`, corrige e recompensa se aprovado. |
 | GET | `/quizzes/{id}/tentativas` | Histórico de tentativas. Query `com_respostas=true` inclui detalhe por pergunta. |
 | GET | `/quizzes/{id}/tentativas/{tentativa_id}` | Detalhe de uma tentativa com todas as respostas. |
+| GET | `/roletas` | Lista roletas ativas (paginado). Aluno: da sua turma; inclui status do giro grátis. |
+| GET | `/roletas/{id}` | Segmentos da roleta (para desenhar a UI). |
+| GET | `/roletas/{id}/status` | Giro grátis disponível, custo em coins, saldo do aluno. |
+| POST | `/roletas/{id}/giros` | Gira a roleta. Body: `tipo` = `gratis` \| `pago`. Retorna prêmio e saldo. |
+| GET | `/roletas/{id}/giros` | Histórico de giros. |
+| GET | `/inventario` | Inventário do aluno. Query: `tipo` = `personagem` \| `figurinha` \| `emote`; staff: `id_aluno`. Retorna resumo, categorias e `imagem_url`. |
+| GET | `/inventario/{aluno_item_id}` | Detalhe de um item do inventário (com datas). |
+| GET | `/presentes` | Presentes recebidos/enviados. Query: `tipo` = `recebidos` \| `enviados`. |
+| POST | `/presentes` | Envia presente: `id_aluno_destino`, `aluno_item_id`, opcional `quantidade`, `mensagem`. |
 | GET | `/atitudes` | Lista atitudes (paginado). Não-master: só unidade do utilizador. |
 | GET | `/loja-itens` | Itens da loja (paginado). Query: `apenas_ativos` (default true). |
 | GET | `/pedidos` | Lista pedidos (paginado). Aluno: só os seus; outros: regras por unidade. |
 | GET | `/ranking` | Ranking. Query: `por` = `coins` \| `xp`, `per_page` (1–100), `unidade_id` (só master). |
+
+---
+
+## Roleta Premiada (com token, aluno)
+
+- **Giro grátis:** 1 por semana (segunda a domingo).
+- **Giro pago:** desconta `custo_coins` da roleta.
+- **Prêmios:** personagens, figurinhas, emotes, coins, XP ou **baú** (2–4 itens aleatórios do pool).
+- Emotes e itens vão para o inventário e podem ser enviados como presente.
+
+### Fluxo no app
+
+1. `GET /roletas` — lista roletas disponíveis  
+2. `GET /roletas/{id}` — **segmentos para desenhar a roleta** (fatias/cores/imagens)  
+3. `GET /roletas/{id}/status` — giro grátis disponível + saldo de coins  
+4. `POST /roletas/{id}/giros` — girar; retorna prêmio ganho  
+5. `GET /inventario` — itens que o aluno já possui  
+
+### Exemplo: `GET /roletas/1`
+
+```json
+{
+  "data": {
+    "id": 1,
+    "titulo": "Roleta Premiada",
+    "descricao": "Gire e ganhe prêmios!",
+    "custo_coins": 50,
+    "status": "ativa",
+    "total_segmentos": 6,
+    "unidade": { "id": 1, "titulo": "Escola Demo" },
+    "turmas": [{ "id": 2, "nome": "3º Ano A" }],
+    "giro_gratis": {
+      "disponivel": true,
+      "proximo_gratis_em": null
+    },
+    "segmentos": [
+      {
+        "id": 1,
+        "titulo": "Herói Espacial",
+        "tipo": "item",
+        "cor": "#F2B233",
+        "ordem": 1,
+        "item": {
+          "id": 3,
+          "titulo": "Herói Espacial",
+          "tipo": "personagem",
+          "emoji": null,
+          "imagem": "/imgs/roleta/heroi-1717600000.png",
+          "imagem_url": "https://seudominio.test/imgs/roleta/heroi-1717600000.png",
+          "raridade": "raro"
+        }
+      },
+      {
+        "id": 2,
+        "titulo": "50 Coins",
+        "tipo": "coins",
+        "cor": "#FFD700",
+        "ordem": 2,
+        "coins": 50,
+        "emoji": "🪙"
+      },
+      {
+        "id": 3,
+        "titulo": "Foguete",
+        "tipo": "item",
+        "cor": "#4CAF50",
+        "ordem": 3,
+        "item": {
+          "id": 5,
+          "titulo": "Foguete",
+          "tipo": "emote",
+          "emoji": "🚀",
+          "imagem": null,
+          "imagem_url": null,
+          "raridade": "comum"
+        }
+      },
+      {
+        "id": 4,
+        "titulo": "Baú Misterioso",
+        "tipo": "bau",
+        "cor": "#9C27B0",
+        "ordem": 4,
+        "emoji": "🎁"
+      }
+    ]
+  }
+}
+```
+
+**Como usar no front:** itere `data.segmentos` para montar cada fatia da roleta.
+
+| Campo | Uso na UI |
+|-------|-----------|
+| `cor` | cor de fundo da fatia |
+| `titulo` | label do prêmio |
+| `tipo` | `item` \| `coins` \| `xp` \| `bau` |
+| `item.imagem_url` | `<img>` para personagem/figurinha |
+| `item.emoji` ou `emoji` | texto emoji para emote/coins/baú |
+| `coins` / `xp` | valor numérico quando `tipo` for coins/xp |
+
+> O conteúdo exato do **baú** só vem depois do giro (sorteio no servidor).
+
+### Exemplo: `GET /roletas/1/status`
+
+```json
+{
+  "data": {
+    "giro_gratis": {
+      "disponivel": true,
+      "proximo_gratis_em": null
+    },
+    "custo_coins": 50,
+    "coins_aluno": 120
+  }
+}
+```
+
+### Exemplo: `POST /roletas/1/giros`
+
+Body: `{ "tipo": "gratis" }` ou `{ "tipo": "pago" }`
+
+```json
+{
+  "message": "Roleta girada com sucesso!",
+  "data": {
+    "giro": {
+      "id": 10,
+      "tipo": "gratis",
+      "custo_coins": 0,
+      "coins_ganho": 0,
+      "xp_ganho": 0,
+      "premios": [
+        {
+          "id": 3,
+          "titulo": "Herói Espacial",
+          "tipo": "personagem",
+          "emoji": null,
+          "raridade": "raro"
+        }
+      ],
+      "segmento": {
+        "id": 1,
+        "titulo": "Herói Espacial",
+        "tipo": "item"
+      },
+      "created_at": "2026-06-05T16:30:00+00:00"
+    },
+    "coins_aluno": 120,
+    "xp_aluno": 340
+  }
+}
+```
+
+Use `giro.segmento.id` para animar a roleta parando na fatia correta.  
+Use `giro.premios[]` para mostrar o popup de recompensa.
+
+### Exemplo: `GET /inventario`
+
+Inventário completo com imagens absolutas (`imagem_url`), agrupado por tipo:
+
+```json
+{
+  "data": {
+    "aluno": {
+      "id": 3,
+      "nome": "Ana Silva",
+      "coins": 120,
+      "xp": 340
+    },
+    "resumo": {
+      "total_quantidade": 5,
+      "total_unicos": 3,
+      "por_tipo": {
+        "personagem": { "unicos": 1, "quantidade": 1 },
+        "figurinha": { "unicos": 1, "quantidade": 2 },
+        "emote": { "unicos": 1, "quantidade": 2 }
+      }
+    },
+    "categorias": [
+      {
+        "tipo": "personagem",
+        "titulo": "Personagens",
+        "total": 1,
+        "unicos": 1,
+        "itens": [
+          {
+            "id": 15,
+            "quantidade": 1,
+            "pode_enviar": true,
+            "updated_at": "2026-06-02T14:30:00+00:00",
+            "item": {
+              "id": 5,
+              "titulo": "Herói Espacial",
+              "label": "Herói Espacial",
+              "tipo": "personagem",
+              "tipo_label": "Personagem",
+              "emoji": null,
+              "imagem": "/imgs/roleta/heroi-123.png",
+              "imagem_url": "https://seudominio.test/imgs/roleta/heroi-123.png",
+              "raridade": "raro",
+              "raridade_label": "Raro"
+            }
+          }
+        ]
+      }
+    ],
+    "itens": []
+  }
+}
+```
+
+**No app Flutter:** use `item.imagem_url` para personagens/figurinhas; para emotes use `item.emoji` quando `imagem_url` for `null`.
+
+Query opcional: `?tipo=emote` | `personagem` | `figurinha`  
+Staff (master/direção/professor): `?id_aluno=3`
 
 ---
 

@@ -44,4 +44,24 @@ class Aluno extends Model
     {
         return $this->hasMany(QuizTentativa::class);
     }
+
+    public function itens(): HasMany
+    {
+        return $this->hasMany(AlunoItem::class);
+    }
+
+    public function roletaGiros(): HasMany
+    {
+        return $this->hasMany(RoletaGiro::class);
+    }
+
+    public function presentesRecebidos(): HasMany
+    {
+        return $this->hasMany(AlunoPresente::class, 'destinatario_id');
+    }
+
+    public function presentesEnviados(): HasMany
+    {
+        return $this->hasMany(AlunoPresente::class, 'remetente_id');
+    }
 }
