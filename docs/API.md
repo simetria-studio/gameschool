@@ -44,8 +44,9 @@ Rotas autenticadas: header `Authorization: Bearer {token}` (Laravel Sanctum).
 | GET | `/roletas/{id}/giros` | Histórico de giros. |
 | GET | `/inventario` | Inventário do aluno. Query: `tipo` = `personagem` \| `figurinha` \| `emote`; staff: `id_aluno`. Retorna resumo, categorias e `imagem_url`. |
 | GET | `/inventario/{aluno_item_id}` | Detalhe de um item do inventário (com datas). |
+| GET | `/presentes/destinatarios` | Busca alunos para enviar presente. Query: `search` (mín. 2 chars). Mesma escola, exceto o próprio aluno. |
 | GET | `/presentes` | Presentes recebidos/enviados. Query: `tipo` = `recebidos` \| `enviados`. |
-| POST | `/presentes` | Envia presente: `id_aluno_destino`, `aluno_item_id`, opcional `quantidade`, `mensagem`. |
+| POST | `/presentes` | Envia presente: `nome_destino`, `aluno_item_id`, opcional `quantidade`, `mensagem`. |
 | GET | `/atitudes` | Lista atitudes (paginado). Não-master: só unidade do utilizador. |
 | GET | `/loja-itens` | Itens da loja (paginado). Query: `apenas_ativos` (default true). |
 | GET | `/pedidos` | Lista pedidos (paginado). Aluno: só os seus; outros: regras por unidade. |
@@ -289,6 +290,60 @@ Inventário completo com imagens absolutas (`imagem_url`), agrupado por tipo:
 
 Query opcional: `?tipo=emote` | `personagem` | `figurinha`  
 Staff (master/direção/professor): `?id_aluno=3`
+
+---
+
+## Presentes (com token, perfil aluno)
+
+### Exemplo: `GET /presentes/destinatarios?search=ana`
+
+```json
+{
+  "data": [
+    {
+      "id": 5,
+      "nome": "Ana Silva",
+      "turma": { "id": 2, "nome": "3º Ano A" }
+    },
+    {
+      "id": 12,
+      "nome": "Ana Paula",
+      "turma": { "id": 3, "nome": "3º Ano B" }
+    }
+  ]
+}
+```
+
+Use para autocomplete ao digitar o nome. No envio, use o **nome completo** se houver homônimos.
+
+### Exemplo: `POST /presentes`
+
+```json
+{
+  "nome_destino": "Ana Silva",
+  "aluno_item_id": 17,
+  "quantidade": 1,
+  "mensagem": "Para você!"
+}
+```
+
+Resposta:
+
+```json
+{
+  "message": "Presente enviado com sucesso!",
+  "data": {
+    "id": 4,
+    "quantidade": 1,
+    "destinatario": {
+      "id": 5,
+      "nome": "Ana Silva"
+    }
+  }
+}
+```
+
+Se o nome for ambíguo, retorna **422** com a lista de nomes encontrados.
 
 ---
 

@@ -37,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/roletas/{roleta}/giros', [RoletaApiController::class, 'giros']);
     Route::get('/inventario', [InventarioApiController::class, 'index']);
     Route::get('/inventario/{alunoItem}', [InventarioApiController::class, 'show']);
+    Route::get('/presentes/destinatarios', [InventarioApiController::class, 'buscarDestinatarios']);
     Route::get('/presentes', [InventarioApiController::class, 'presentes']);
     Route::post('/presentes', [InventarioApiController::class, 'enviarPresente']);
     Route::get('/atitudes', [AppDataController::class, 'atitudes']);

@@ -101,6 +101,41 @@ class InventarioApiController extends Controller
         ]);
     }
 
+    public function buscarDestinatarios(Request $request): JsonResponse
+    {
+        $user = $this->user($request);
+
+        if (! $this->isAluno($user) || ! $user->aluno) {
+            abort(403);
+        }
+
+        $search = trim((string) $request->string('search', ''));
+
+        if (mb_strlen($search) < 2) {
+            return response()->json([
+                'data' => [],
+                'message' => 'Digite pelo menos 2 caracteres para buscar.',
+            ]);
+        }
+
+        $alunos = Aluno::query()
+            ->with('turma:id,nome')
+            ->where('unidade_id', $user->aluno->unidade_id)
+            ->where('id', '!=', $user->aluno->id)
+            ->where('nome', 'like', '%' . $search . '%')
+            ->orderBy('nome')
+            ->limit(15)
+            ->get(['id', 'nome', 'turma_id']);
+
+        return response()->json([
+            'data' => $alunos->map(fn (Aluno $a) => [
+                'id' => $a->id,
+                'nome' => $a->nome,
+                'turma' => $a->turma ? ['id' => $a->turma->id, 'nome' => $a->turma->nome] : null,
+            ]),
+        ]);
+    }
+
     public function enviarPresente(Request $request): JsonResponse
     {
         $user = $this->user($request);
@@ -110,18 +145,21 @@ class InventarioApiController extends Controller
         }
 
         $validated = $request->validate([
-            'id_aluno_destino' => ['required', 'integer', 'exists:alunos,id'],
+            'nome_destino' => ['required', 'string', 'min:2', 'max:255'],
             'aluno_item_id' => ['required', 'integer', 'exists:aluno_itens,id'],
             'quantidade' => ['sometimes', 'integer', 'min:1'],
             'mensagem' => ['nullable', 'string', 'max:500'],
         ], [], [
-            'id_aluno_destino' => 'aluno destino',
+            'nome_destino' => 'nome do destino',
             'aluno_item_id' => 'item',
             'quantidade' => 'quantidade',
             'mensagem' => 'mensagem',
         ]);
 
-        $destinatario = Aluno::findOrFail((int) $validated['id_aluno_destino']);
+        $destinatario = PresenteAlunoProcessor::resolverDestinatarioPorNome(
+            $user->aluno,
+            $validated['nome_destino']
+        );
         $alunoItem = AlunoItem::findOrFail((int) $validated['aluno_item_id']);
         $qtd = (int) ($validated['quantidade'] ?? 1);
 
@@ -138,6 +176,10 @@ class InventarioApiController extends Controller
             'data' => [
                 'id' => $presente->id,
                 'quantidade' => (int) $presente->quantidade,
+                'destinatario' => [
+                    'id' => $destinatario->id,
+                    'nome' => $destinatario->nome,
+                ],
             ],
         ], 201);
     }
