@@ -221,7 +221,7 @@ class RoletaController extends Controller
     {
         $validated = $request->validate([
             'titulo' => ['required', 'string', 'max:255'],
-            'tipo' => ['required', 'in:item,coins,xp,bau'],
+            'tipo' => ['required', 'in:item,item_aleatorio,coins,xp,bau'],
             'roleta_item_id' => ['nullable', 'integer', 'exists:roleta_itens,id'],
             'coins' => ['nullable', 'integer', 'min:0'],
             'xp' => ['nullable', 'integer', 'min:0'],
@@ -240,7 +240,23 @@ class RoletaController extends Controller
             throw ValidationException::withMessages(['roleta_item_id' => 'Selecione o item do prêmio.']);
         }
 
-        if ($validated['tipo'] === 'bau') {
+        if ($validated['tipo'] === 'item_aleatorio') {
+            $temItens = RoletaItem::query()
+                ->where('unidade_id', $roleta->unidade_id)
+                ->where('status', 'ativo')
+                ->exists();
+
+            if (! $temItens) {
+                throw ValidationException::withMessages([
+                    'tipo' => 'Cadastre itens ativos (personagens, figurinhas ou emotes) antes de usar item aleatório.',
+                ]);
+            }
+
+            $validated['roleta_item_id'] = null;
+            $validated['coins'] = 0;
+            $validated['xp'] = 0;
+            $validated['bau_itens'] = [];
+        } elseif ($validated['tipo'] === 'bau') {
             $bauItens = collect($validated['bau_itens'] ?? [])->filter(fn ($b) => ! empty($b['roleta_item_id']))->values();
             if ($bauItens->count() < 2) {
                 throw ValidationException::withMessages(['bau_itens' => 'O baú precisa de pelo menos 2 itens no pool.']);

@@ -22,7 +22,7 @@ class RoletaSegmento extends Model
         'ordem',
     ];
 
-    public const TIPOS = ['item', 'coins', 'xp', 'bau'];
+    public const TIPOS = ['item', 'item_aleatorio', 'coins', 'xp', 'bau'];
 
     public function roleta(): BelongsTo
     {

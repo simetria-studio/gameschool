@@ -142,6 +142,14 @@ Rotas autenticadas: header `Authorization: Bearer {token}` (Laravel Sanctum).
         "cor": "#9C27B0",
         "ordem": 4,
         "emoji": "🎁"
+      },
+      {
+        "id": 5,
+        "titulo": "Item Surpresa",
+        "tipo": "item_aleatorio",
+        "cor": "#FF5722",
+        "ordem": 5,
+        "emoji": "🎲"
       }
     ]
   }
@@ -154,12 +162,12 @@ Rotas autenticadas: header `Authorization: Bearer {token}` (Laravel Sanctum).
 |-------|-----------|
 | `cor` | cor de fundo da fatia |
 | `titulo` | label do prêmio |
-| `tipo` | `item` \| `coins` \| `xp` \| `bau` |
+| `tipo` | `item` \| `item_aleatorio` \| `coins` \| `xp` \| `bau` |
 | `item.imagem_url` | `<img>` para personagem/figurinha |
 | `item.emoji` ou `emoji` | texto emoji para emote/coins/baú |
 | `coins` / `xp` | valor numérico quando `tipo` for coins/xp |
 
-> O conteúdo exato do **baú** só vem depois do giro (sorteio no servidor).
+> O conteúdo exato do **baú** e do **item aleatório** só vem depois do giro (sorteio no servidor).
 
 ### Exemplo: `GET /roletas/1/status`
 

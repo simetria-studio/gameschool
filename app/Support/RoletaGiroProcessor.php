@@ -6,6 +6,7 @@ use App\Models\Aluno;
 use App\Models\Roleta;
 use App\Models\RoletaBauItem;
 use App\Models\RoletaGiro;
+use App\Models\RoletaItem;
 use App\Models\RoletaSegmento;
 use App\Notifications\RoletaPremioGanho;
 use Illuminate\Support\Facades\DB;
@@ -60,7 +61,7 @@ class RoletaGiroProcessor
 
             /** @var RoletaSegmento $segmento */
             $segmento = SorteioPonderado::sortear($segmentos);
-            $resultado = self::aplicarSegmento($segmento, $aluno);
+            $resultado = self::aplicarSegmento($segmento, $aluno, $roleta);
 
             $aluno->increment('coins', $resultado['coins_ganho']);
             $aluno->increment('xp', $resultado['xp_ganho']);
@@ -162,7 +163,7 @@ class RoletaGiroProcessor
     /**
      * @return array{coins_ganho: int, xp_ganho: int, premios: array<int, array<string, mixed>>}
      */
-    private static function aplicarSegmento(RoletaSegmento $segmento, Aluno $aluno): array
+    private static function aplicarSegmento(RoletaSegmento $segmento, Aluno $aluno, Roleta $roleta): array
     {
         $premios = [];
         $coins = 0;
@@ -185,6 +186,14 @@ class RoletaGiroProcessor
                 }
                 break;
 
+            case 'item_aleatorio':
+                $item = self::sortearItemAleatorio($roleta);
+                if ($item) {
+                    InventarioAluno::adicionar($aluno, $item);
+                    $premios[] = self::formatPremioItem($item);
+                }
+                break;
+
             case 'bau':
                 $premios = array_merge($premios, self::abrirBau($segmento, $aluno));
                 break;
@@ -195,6 +204,20 @@ class RoletaGiroProcessor
             'xp_ganho' => $xp,
             'premios' => $premios,
         ];
+    }
+
+    private static function sortearItemAleatorio(Roleta $roleta): ?RoletaItem
+    {
+        $pool = RoletaItem::query()
+            ->where('unidade_id', $roleta->unidade_id)
+            ->where('status', 'ativo')
+            ->get();
+
+        if ($pool->isEmpty()) {
+            return null;
+        }
+
+        return $pool->random();
     }
 
     /**

@@ -200,6 +200,9 @@ class RoletaApiController extends Controller
                 'bau' => array_merge($segmento, [
                     'emoji' => '🎁',
                 ]),
+                'item_aleatorio' => array_merge($segmento, [
+                    'emoji' => '🎲',
+                ]),
                 default => $segmento,
             };
         })->values();

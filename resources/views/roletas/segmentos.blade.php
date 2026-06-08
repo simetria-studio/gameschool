@@ -39,10 +39,11 @@
                         <div class="col-6 mb-3">
                             <label class="form-label fw-semibold">Tipo</label>
                             <select name="tipo" id="seg_tipo" class="form-select" required>
-                                <option value="item">Item (personagem/figurinha/emote)</option>
+                                <option value="item">Item fixo (personagem/figurinha/emote)</option>
+                                <option value="item_aleatorio">1 item aleatório (qualquer item da escola)</option>
                                 <option value="coins">Coins</option>
                                 <option value="xp">XP</option>
-                                <option value="bau">Baú (itens aleatórios)</option>
+                                <option value="bau">Baú (vários itens aleatórios)</option>
                             </select>
                         </div>
                         <div class="col-6 mb-3">
@@ -60,6 +61,12 @@
                                 <option value="{{ $item->id }}">{{ $item->emoji }} {{ $item->titulo }} ({{ $item->tipo }})</option>
                             @endforeach
                         </select>
+                    </div>
+                    <div id="campo_item_aleatorio" class="mb-3 d-none">
+                        <p class="small text-muted mb-0">
+                            <i class="bi bi-shuffle me-1"></i>
+                            Ao ganhar, sorteia <strong>1 item</strong> entre todos os personagens, figurinhas e emotes ativos da escola.
+                        </p>
                     </div>
                     <div id="campo_coins" class="mb-3 d-none"><label class="form-label fw-semibold">Coins</label><input type="number" name="coins" class="form-control" value="10" min="0"></div>
                     <div id="campo_xp" class="mb-3 d-none"><label class="form-label fw-semibold">XP</label><input type="number" name="xp" class="form-control" value="5" min="0"></div>
@@ -91,6 +98,7 @@
                             <strong>{{ $seg->titulo }}</strong>
                             <span class="small gs-text-secondary ms-2">{{ strtoupper($seg->tipo) }} · peso {{ $seg->peso }}</span>
                             @if($seg->tipo==='item' && $seg->item)<div class="small mt-1">{{ $seg->item->emoji }} {{ $seg->item->titulo }}</div>@endif
+                            @if($seg->tipo==='item_aleatorio')<div class="small mt-1">🎲 Qualquer item ativo da escola</div>@endif
                             @if($seg->tipo==='coins')<div class="small mt-1">{{ $seg->coins }} coins</div>@endif
                             @if($seg->tipo==='xp')<div class="small mt-1">{{ $seg->xp }} XP</div>@endif
                             @if($seg->tipo==='bau')
@@ -112,7 +120,7 @@
 <script>
 (function(){
     const tipo = document.getElementById('seg_tipo');
-    const campos = { item: 'campo_item', coins: 'campo_coins', xp: 'campo_xp', bau: 'campo_bau' };
+    const campos = { item: 'campo_item', item_aleatorio: 'campo_item_aleatorio', coins: 'campo_coins', xp: 'campo_xp', bau: 'campo_bau' };
     function toggle(){
         Object.values(campos).forEach(id => document.getElementById(id).classList.add('d-none'));
         document.getElementById(campos[tipo.value]).classList.remove('d-none');
