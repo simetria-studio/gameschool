@@ -8,7 +8,7 @@
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
         <div>
             <h1 class="h5 mb-0 fw-bold">PERSONAGENS E FIGURINHAS</h1>
-            <p class="small gs-text-secondary mb-0">Upload de imagem · PNG, JPG, WEBP ou GIF (máx. 2 MB)</p>
+            <p class="small gs-text-secondary mb-0">Upload de imagem · figurinhas geram versão silhueta para o álbum · PNG, JPG, WEBP ou GIF (máx. {{ $tamanhoMaxUpload }})</p>
         </div>
         <div class="d-flex gap-2">
             <a href="{{ route('roletas.index') }}" class="btn btn-outline-secondary btn-sm">Roletas</a>

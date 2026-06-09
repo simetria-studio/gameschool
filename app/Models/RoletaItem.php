@@ -15,6 +15,7 @@ class RoletaItem extends Model
         'tipo',
         'emoji',
         'imagem',
+        'imagem_bloqueada',
         'raridade',
         'status',
     ];

@@ -42,6 +42,7 @@ Rotas autenticadas: header `Authorization: Bearer {token}` (Laravel Sanctum).
 | GET | `/roletas/{id}/status` | Giro grátis disponível, limite semanal, custo em coins, saldo do aluno. |
 | POST | `/roletas/{id}/giros` | Gira a roleta. Body: `tipo` = `gratis` \| `pago` (omitido se `somente_gratis`). Retorna prêmio e saldo. |
 | GET | `/roletas/{id}/giros` | Histórico de giros. |
+| GET | `/figurinhas` | Álbum de figurinhas (estilo Pokédex). Todas da escola + quais o aluno possui. Staff: `id_aluno`. |
 | GET | `/inventario` | Inventário do aluno. Query: `tipo` = `personagem` \| `figurinha` \| `emote`; staff: `id_aluno`. Retorna resumo, categorias e `imagem_url`. |
 | GET | `/inventario/{aluno_item_id}` | Detalhe de um item do inventário (com datas). |
 | GET | `/presentes/destinatarios` | Busca alunos para enviar presente. Query: `search` (mín. 2 chars). Mesma escola, exceto o próprio aluno. |
@@ -298,6 +299,63 @@ Inventário completo com imagens absolutas (`imagem_url`), agrupado por tipo:
 
 Query opcional: `?tipo=emote` | `personagem` | `figurinha`  
 Staff (master/direção/professor): `?id_aluno=3`
+
+---
+
+## Álbum de figurinhas (com token, perfil aluno)
+
+No cadastro web, cada **figurinha** gera automaticamente uma versão **silhueta/apagada** (`imagem_bloqueada`) para exibir quando o aluno ainda não possui a peça.
+
+### Exemplo: `GET /figurinhas`
+
+```json
+{
+  "data": {
+    "aluno": {
+      "id": 3,
+      "nome": "Ana Silva"
+    },
+    "resumo": {
+      "total": 151,
+      "possui": 113,
+      "faltam": 38,
+      "percentual": 74.8
+    },
+    "figurinhas": [
+      {
+        "id": 8,
+        "numero": 1,
+        "titulo": "Estrela Dourada",
+        "raridade": "epico",
+        "raridade_label": "Épico",
+        "possui": true,
+        "quantidade": 2,
+        "imagem_url": "https://seudominio.test/imgs/roleta/estrela-456.png",
+        "imagem_bloqueada_url": "https://seudominio.test/imgs/roleta/estrela-456-bloqueada.png",
+        "imagem_exibicao_url": "https://seudominio.test/imgs/roleta/estrela-456.png"
+      },
+      {
+        "id": 9,
+        "numero": 2,
+        "titulo": "Dragão Azul",
+        "raridade": "lendario",
+        "raridade_label": "Lendário",
+        "possui": false,
+        "quantidade": 0,
+        "imagem_url": "https://seudominio.test/imgs/roleta/dragao-789.png",
+        "imagem_bloqueada_url": "https://seudominio.test/imgs/roleta/dragao-789-bloqueada.png",
+        "imagem_exibicao_url": "https://seudominio.test/imgs/roleta/dragao-789-bloqueada.png"
+      }
+    ]
+  }
+}
+```
+
+**No Flutter:** use `imagem_exibicao_url` no grid (já escolhe colorida ou silhueta). Mostre o contador `resumo.possui / resumo.total` no topo, como um álbum.
+
+Staff: `?id_aluno=3`
+
+> Figurinhas cadastradas **antes** desta atualização: edite e salve (ou reenvie a imagem) para gerar a silhueta.
 
 ---
 

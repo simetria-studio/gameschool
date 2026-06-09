@@ -43,6 +43,7 @@ class RoletaColecionavelController extends Controller
             'search' => $search,
             'tipo' => $tipo,
             'canManageAllUnits' => $isMaster,
+            'tamanhoMaxUpload' => RoletaImagemStorage::tamanhoMaximoRotulo(),
         ]);
     }
 
@@ -56,7 +57,9 @@ class RoletaColecionavelController extends Controller
         }
 
         $validated = $this->validateColecionavel($request, true);
-        $validated['imagem'] = RoletaImagemStorage::upload($request->file('arquivo'));
+        $upload = RoletaImagemStorage::uploadColecionavel($request->file('arquivo'), $validated['tipo']);
+        $validated['imagem'] = $upload['imagem'];
+        $validated['imagem_bloqueada'] = $upload['imagem_bloqueada'];
         $validated['emoji'] = null;
         unset($validated['arquivo']);
 
@@ -85,7 +88,19 @@ class RoletaColecionavelController extends Controller
         $validated = $this->validateColecionavel($request, false);
 
         if ($request->hasFile('arquivo')) {
-            $validated['imagem'] = RoletaImagemStorage::upload($request->file('arquivo'), $roletaItem->imagem);
+            $upload = RoletaImagemStorage::uploadColecionavel(
+                $request->file('arquivo'),
+                $validated['tipo'],
+                $roletaItem->imagem,
+                $roletaItem->imagem_bloqueada
+            );
+            $validated['imagem'] = $upload['imagem'];
+            $validated['imagem_bloqueada'] = $upload['imagem_bloqueada'];
+        } elseif ($validated['tipo'] === 'personagem' && $roletaItem->imagem_bloqueada) {
+            RoletaImagemStorage::delete($roletaItem->imagem_bloqueada);
+            $validated['imagem_bloqueada'] = null;
+        } elseif ($validated['tipo'] === 'figurinha' && ! $roletaItem->imagem_bloqueada && $roletaItem->imagem) {
+            $validated['imagem_bloqueada'] = RoletaImagemStorage::gerarSilhueta($roletaItem->imagem);
         }
 
         unset($validated['arquivo']);
@@ -108,6 +123,7 @@ class RoletaColecionavelController extends Controller
         }
 
         RoletaImagemStorage::delete($roletaItem->imagem);
+        RoletaImagemStorage::delete($roletaItem->imagem_bloqueada);
         $roletaItem->delete();
 
         return redirect()
@@ -133,13 +149,13 @@ class RoletaColecionavelController extends Controller
         ];
 
         if ($criando) {
-            $rules['arquivo'] = ['required', 'image', 'mimes:jpeg,jpg,png,webp,gif', 'max:2048'];
+            $rules['arquivo'] = ['required', 'image', 'mimes:jpeg,jpg,png,webp,gif', 'max:' . RoletaImagemStorage::TAMANHO_MAXIMO_KB];
         } else {
-            $rules['arquivo'] = ['nullable', 'image', 'mimes:jpeg,jpg,png,webp,gif', 'max:2048'];
+            $rules['arquivo'] = ['nullable', 'image', 'mimes:jpeg,jpg,png,webp,gif', 'max:' . RoletaImagemStorage::TAMANHO_MAXIMO_KB];
         }
 
         $validated = $request->validate($rules, [
-            'arquivo.max' => 'A imagem deve ter no máximo 2 MB.',
+            'arquivo.max' => 'A imagem deve ter no máximo ' . RoletaImagemStorage::tamanhoMaximoRotulo() . '.',
             'arquivo.image' => 'Envie um arquivo de imagem válido.',
         ], [
             'titulo' => 'título',

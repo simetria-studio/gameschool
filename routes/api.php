@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AppDataController;
 use App\Http\Controllers\Api\AuthApiController;
+use App\Http\Controllers\Api\FigurinhaApiController;
 use App\Http\Controllers\Api\InventarioApiController;
 use App\Http\Controllers\Api\NotificacaoApiController;
 use App\Http\Controllers\Api\PedidoApiController;
@@ -35,6 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/roletas/{roleta}/status', [RoletaApiController::class, 'status']);
     Route::post('/roletas/{roleta}/giros', [RoletaApiController::class, 'storeGiro']);
     Route::get('/roletas/{roleta}/giros', [RoletaApiController::class, 'giros']);
+    Route::get('/figurinhas', [FigurinhaApiController::class, 'index']);
     Route::get('/inventario', [InventarioApiController::class, 'index']);
     Route::get('/inventario/{alunoItem}', [InventarioApiController::class, 'show']);
     Route::get('/presentes/destinatarios', [InventarioApiController::class, 'buscarDestinatarios']);

@@ -80,6 +80,8 @@ class InventarioAluno
             'emoji' => $item->emoji,
             'imagem' => $item->imagem,
             'imagem_url' => RoletaImagemStorage::urlPublica($item->imagem),
+            'imagem_bloqueada' => $item->imagem_bloqueada,
+            'imagem_bloqueada_url' => RoletaImagemStorage::urlPublica($item->imagem_bloqueada),
             'raridade' => $item->raridade,
             'raridade_label' => self::raridadeLabel($item->raridade),
         ];
