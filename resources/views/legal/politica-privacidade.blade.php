@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="index,follow">
-    <title>Política de Privacidade — Go Game School</title>
-    <meta name="description" content="Política de Privacidade do aplicativo Go Game School, em conformidade com a LGPD e requisitos da Google Play Store.">
+    <title>Política de Privacidade — Game School</title>
+    <meta name="description" content="Política de Privacidade do aplicativo Game School, em conformidade com a LGPD e requisitos da Google Play Store.">
     <style>
         :root {
             --gs-primary: #F2B233;
@@ -104,14 +104,14 @@
 <body>
     <main class="wrap">
         <header>
-            <p class="brand">Go Game School</p>
+            <p class="brand">Game School</p>
             <h1>Política de Privacidade</h1>
             <p class="meta">Última atualização: 4 de agosto de 2026</p>
         </header>
 
         <div class="card">
             <p style="margin:0">
-                Esta Política de Privacidade descreve como o <strong>Go Game School</strong>
+                Esta Política de Privacidade descreve como o <strong>Game School</strong>
                 (“nós”, “nosso” ou “Aplicativo”) coleta, usa, armazena e protege informações
                 no aplicativo móvel e nos serviços relacionados, em conformidade com a
                 <strong>Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD)</strong>
@@ -122,16 +122,16 @@
         <h2>1. Controlador dos dados</h2>
         <p>
             O controlador dos dados pessoais tratados por meio do Aplicativo é o
-            <strong>Go Game School</strong>. Para questões de privacidade:
+            <strong>Game School</strong>. Para questões de privacidade:
         </p>
         <ul>
-            <li><strong>E-mail de privacidade:</strong> <a href="mailto:privacidade@gogameschool.com.br">privacidade@gogameschool.com.br</a></li>
+            <li><strong>E-mail de privacidade:</strong> <a href="mailto:privacidade@gameschool.com.br">privacidade@gameschool.com.br</a></li>
             <li><strong>Site / painel:</strong> {{ rtrim(config('app.url'), '/') }}</li>
         </ul>
 
         <h2>2. A quem se destina o Aplicativo</h2>
         <p>
-            O Go Game School é uma plataforma educacional gamificada usada por escolas e unidades
+            O Game School é uma plataforma educacional gamificada usada por escolas e unidades
             de ensino. Destina-se principalmente a <strong>alunos</strong> (incluindo crianças e
             adolescentes), bem como a professores, direção e administradores autorizados pela escola.
         </p>
@@ -257,7 +257,7 @@
         </ul>
         <p>
             Para exercer esses direitos, envie um e-mail para
-            <a href="mailto:privacidade@gogameschool.com.br">privacidade@gogameschool.com.br</a>
+            <a href="mailto:privacidade@gameschool.com.br">privacidade@gameschool.com.br</a>
             com identificação suficiente da conta/aluno e da escola. Podemos solicitar confirmação
             de identidade ou autorização da escola/responsável antes de atender o pedido.
         </p>
@@ -271,7 +271,7 @@
         </p>
         <p>
             No momento da publicação desta versão, o foco do tratamento é a operação própria do
-            Go Game School (conta, progresso educacional/gamificado e funcionamento técnico).
+            Game School (conta, progresso educacional/gamificado e funcionamento técnico).
         </p>
 
         <h2>12. Exclusão de conta e dados</h2>
@@ -298,8 +298,8 @@
             Dúvidas sobre privacidade, segurança ou exercício de direitos:
         </p>
         <ul>
-            <li>E-mail: <a href="mailto:privacidade@gogameschool.com.br">privacidade@gogameschool.com.br</a></li>
-            <li>Controlador: Go Game School</li>
+            <li>E-mail: <a href="mailto:privacidade@gameschool.com.br">privacidade@gameschool.com.br</a></li>
+            <li>Controlador: Game School</li>
         </ul>
         <p>
             Você também pode apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD),
@@ -307,7 +307,7 @@
         </p>
 
         <footer>
-            <p>© {{ date('Y') }} Go Game School. Todos os direitos reservados.</p>
+            <p>© {{ date('Y') }} Game School. Todos os direitos reservados.</p>
             <p>URL desta página: <a href="{{ url('/politica-de-privacidade') }}">{{ url('/politica-de-privacidade') }}</a></p>
         </footer>
     </main>
