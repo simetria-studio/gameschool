@@ -119,19 +119,12 @@
             </p>
         </div>
 
-        <p class="note">
-            Substitua os campos entre colchetes (ex.: e-mail e razão social) pelos dados reais
-            da empresa antes de publicar o app na Play Store.
-        </p>
-
         <h2>1. Controlador dos dados</h2>
         <p>
-            O controlador dos dados pessoais tratados por meio do Aplicativo é:
+            O controlador dos dados pessoais tratados por meio do Aplicativo é o
+            <strong>Go Game School</strong>. Para questões de privacidade:
         </p>
         <ul>
-            <li><strong>Nome / razão social:</strong> [RAZÃO SOCIAL DA EMPRESA]</li>
-            <li><strong>CNPJ:</strong> [00.000.000/0000-00]</li>
-            <li><strong>Endereço:</strong> [ENDEREÇO COMPLETO]</li>
             <li><strong>E-mail de privacidade:</strong> <a href="mailto:privacidade@gogameschool.com.br">privacidade@gogameschool.com.br</a></li>
             <li><strong>Site / painel:</strong> {{ rtrim(config('app.url'), '/') }}</li>
         </ul>
@@ -306,7 +299,7 @@
         </p>
         <ul>
             <li>E-mail: <a href="mailto:privacidade@gogameschool.com.br">privacidade@gogameschool.com.br</a></li>
-            <li>Controlador: [RAZÃO SOCIAL DA EMPRESA] — CNPJ [00.000.000/0000-00]</li>
+            <li>Controlador: Go Game School</li>
         </ul>
         <p>
             Você também pode apresentar reclamação à Autoridade Nacional de Proteção de Dados (ANPD),
