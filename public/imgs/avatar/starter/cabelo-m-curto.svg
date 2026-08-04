@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+  <defs>
+    <linearGradient id="h1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6B4423"/>
+      <stop offset="100%" stop-color="#3E2814"/>
+    </linearGradient>
+  </defs>
+  <!-- cabelo curto masculino — cobre topo da cabeça -->
+  <path d="M58 70c0-28 18-48 42-48s42 20 42 48c0 8-4 14-10 16-2-18-14-28-32-28s-30 10-32 28c-6-2-10-8-10-16z" fill="url(#h1)" stroke="#2A1A0E" stroke-width="2.5"/>
+  <path d="M70 42c12-10 28-14 44-8" fill="none" stroke="#8B5E3C" stroke-width="4" stroke-linecap="round" opacity=".45"/>
+  <path d="M64 58c8-6 16-8 24-6" fill="none" stroke="#8B5E3C" stroke-width="3" stroke-linecap="round" opacity=".3"/>
+</svg>

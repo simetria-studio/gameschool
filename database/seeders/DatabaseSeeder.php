@@ -23,5 +23,7 @@ class DatabaseSeeder extends Seeder
             'access_role' => 'master',
             'unidade_id' => null,
         ]);
+
+        $this->call(AvatarPecaSeeder::class);
     }
 }

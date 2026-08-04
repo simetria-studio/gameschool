@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+  <defs>
+    <linearGradient id="s2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C0703A"/>
+      <stop offset="100%" stop-color="#6B3A14"/>
+    </linearGradient>
+  </defs>
+  <rect x="74" y="228" width="24" height="40" rx="6" fill="url(#s2)" stroke="#3D2010" stroke-width="2.5"/>
+  <rect x="102" y="228" width="24" height="40" rx="6" fill="url(#s2)" stroke="#3D2010" stroke-width="2.5"/>
+  <path d="M70 264h32c6 0 12 4 12 12v6c0 4-4 8-10 8H78c-8 0-14-4-14-8v-6c0-8 2-12 6-12z" fill="#8B4E20" stroke="#3D2010" stroke-width="2.5"/>
+  <path d="M98 264h32c4 0 6 4 6 12v6c0 4-6 8-14 8h-26c-6 0-10-4-10-8v-6c0-8 6-12 12-12z" fill="#8B4E20" stroke="#3D2010" stroke-width="2.5"/>
+  <line x1="80" y1="238" x2="92" y2="238" stroke="#E8C4A0" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="80" y1="248" x2="92" y2="248" stroke="#E8C4A0" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="108" y1="238" x2="120" y2="238" stroke="#E8C4A0" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="108" y1="248" x2="120" y2="248" stroke="#E8C4A0" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

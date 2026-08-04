@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Proposta — Sistema de Avatar | Game School</title>
+  <style>
+    @page { margin: 18mm 15mm; size: A4; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      font-size: 11pt;
+      line-height: 1.5;
+      color: #1a1a1a;
+      max-width: 210mm;
+      margin: 0 auto;
+      padding: 12mm 10mm;
+    }
+    h1 { font-size: 22pt; border-bottom: 2px solid #2563eb; padding-bottom: 8px; page-break-after: avoid; }
+    h2 { font-size: 15pt; color: #1e40af; margin-top: 1.4em; page-break-after: avoid; }
+    h3 { font-size: 12pt; page-break-after: avoid; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 10pt; page-break-inside: avoid; }
+    th, td { border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left; vertical-align: top; }
+    th { background: #f1f5f9; font-weight: 600; }
+    tr:nth-child(even) td { background: #fafafa; }
+    code, pre { font-family: Consolas, monospace; font-size: 9pt; }
+    pre {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 10px;
+      overflow-x: auto;
+      page-break-inside: avoid;
+    }
+    blockquote { border-left: 4px solid #2563eb; margin: 12px 0; padding: 8px 16px; background: #eff6ff; }
+    hr { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+    .print-hint {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      font-size: 10pt;
+    }
+    @media print {
+      .print-hint { display: none; }
+      body { padding: 0; }
+      a { color: inherit; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="print-hint">
+  </div>
+  <h1>Proposta técnica — Sistema de avatar personalizável (Game School)</h1>
+<p><strong>Documento para apresentação e exportação em PDF</strong><br><strong>Data de referência:</strong> junho de 2026<br><strong>Valor hora de desenvolvimento:</strong> R$ 80,00<br><strong>Stack atual do projeto:</strong> Laravel 12 (API + painel admin) · React (app web aluno) · Sanctum  </p>
+<hr>
+<h2>1. Objetivo</h2>
+<p>Implementar um <strong>sistema de personagem personalizável</strong> para o aluno, integrado à gamificação existente (coins, XP, roleta, inventário, emotes, presentes), com:</p>
+<ul>
+<li>Catálogo de peças desbloqueáveis (cabelo, roupa, calçado, acessórios)</li>
+<li>Editor de customização no app React</li>
+<li>Avatar visível no perfil, ranking e uso de emotes (ex.: acenar ao usar 👋)</li>
+<li>Painel administrativo para cadastro de peças</li>
+</ul>
+<p>Este documento compara duas abordagens visuais — <strong>2.5D</strong> e <strong>3D</strong> — com prós, contras, escopo detalhado, horas e custo estimado.</p>
+<blockquote>
+<p><strong>Nota:</strong> estimativas de <strong>arte</strong> (desenho 2D, rigging 3D, animações) são listadas à parte. Os valores abaixo referem-se ao <strong>desenvolvimento de software</strong> (backend + frontend + integrações).</p>
+</blockquote>
+<hr>
+<h2>2. Contexto — o que já existe no Game School</h2>
+<table>
+<thead>
+<tr>
+<th>Módulo existente</th>
+<th>Reaproveitamento no avatar</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>API Sanctum + auth</td>
+<td>Mesmo fluxo de token para React</td>
+</tr>
+<tr>
+<td>Inventário (<code>aluno_itens</code>)</td>
+<td>Lógica similar para peças do avatar</td>
+</tr>
+<tr>
+<td>Roleta / loja / coins</td>
+<td>Desbloqueio de peças como prêmio</td>
+</tr>
+<tr>
+<td>Emotes (<code>roleta_itens</code> tipo emote)</td>
+<td>Mapeamento emote → animação</td>
+</tr>
+<tr>
+<td>Upload de imagens + silhueta (figurinhas)</td>
+<td>Versão bloqueada de peças 2D/2.5D</td>
+</tr>
+<tr>
+<td>Painel Blade (professor/direção)</td>
+<td>Novo CRUD de peças de avatar</td>
+</tr>
+</tbody></table>
+<p>O avatar <strong>não substitui</strong> figurinhas (álbum colecionável 2D); convivem como produtos distintos.</p>
+<hr>
+<h2>3. Comparativo: 2.5D vs 3D</h2>
+<h3>3.1 O que é cada abordagem</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>2.5D</strong></th>
+<th><strong>3D</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Definição</strong></td>
+<td>Personagem 2D com sensação de profundidade: animações (Spine/Lottie), sprites multi-ângulo ou parallax</td>
+<td>Modelo tridimensional (GLB/GLTF) com câmera orbitável</td>
+</tr>
+<tr>
+<td><strong>Render no React</strong></td>
+<td>Spine WebGL, Lottie, sprite sheets ou camadas PNG animadas</td>
+<td>React Three Fiber + Three.js</td>
+</tr>
+<tr>
+<td><strong>Arte necessária</strong></td>
+<td>Sprites ou esqueleto 2D animado (Spine/DragonBones)</td>
+<td>Modelos 3D com rig único + peças modulares</td>
+</tr>
+<tr>
+<td><strong>Referência visual</strong></td>
+<td>Jogos mobile 2D, avatares animados estilo cartoon</td>
+<td>Avatares rotacionáveis, ambientes 3D</td>
+</tr>
+</tbody></table>
+<h3>3.2 Prós e contras</h3>
+<h4>2.5D</h4>
+<table>
+<thead>
+<tr>
+<th>Prós</th>
+<th>Contras</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Visual mais rico que PNG estático, com animações fluidas (idle, acenar)</td>
+<td>Arte exige pipeline Spine/Lottie ou vários sprites por ação</td>
+</tr>
+<tr>
+<td>Melhor desempenho que 3D full na maioria dos dispositivos</td>
+<td>Rotação 360° limitada (a menos que desenhem vários ângulos)</td>
+</tr>
+<tr>
+<td>Equilíbrio entre custo de dev e impacto visual</td>
+<td>Integração Spine/Lottie tem curva de aprendizado</td>
+</tr>
+<tr>
+<td>Emotes (acenar, pular) naturais via timeline de animação</td>
+<td>Peças modulares precisam ser desenhadas para encaixar no rig 2D</td>
+</tr>
+<tr>
+<td>Funciona bem em React web e mobile WebView</td>
+<td>Menos “wow factor” que 3D em rotação livre</td>
+</tr>
+<tr>
+<td><strong>Menor prazo e custo de desenvolvimento</strong></td>
+<td>Dependência de ferramenta de arte (Spine, etc.)</td>
+</tr>
+</tbody></table>
+<h4>3D</h4>
+<table>
+<thead>
+<tr>
+<th>Prós</th>
+<th>Contras</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Rotação 360°, zoom, iluminação — experiência premium</td>
+<td><strong>Maior custo e prazo</strong> de desenvolvimento</td>
+</tr>
+<tr>
+<td>Peças modulares (mesh swap) bem estabelecidas em jogos</td>
+<td>Exige modelador 3D + <strong>rig compatível</strong> entre todas as peças</td>
+</tr>
+<tr>
+<td>Escalável para futuro (cenários 3D, AR)</td>
+<td>Performance: mobile fraco pode sofrer</td>
+</tr>
+<tr>
+<td>Personalização por cor/material no runtime</td>
+<td>Arquivos GLB maiores → CDN, cache, loading</td>
+</tr>
+<tr>
+<td>Impressiona em demos comerciais</td>
+<td>Debug de encaixe de peças (skinning) consome tempo</td>
+</tr>
+<tr>
+<td></td>
+<td>React Three Fiber + otimização exigem perfil mais especializado</td>
+</tr>
+</tbody></table>
+<h3>3.3 Quando escolher cada uma</h3>
+<table>
+<thead>
+<tr>
+<th>Critério</th>
+<th>Recomendação</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Prazo curto / orçamento limitado</td>
+<td><strong>2.5D</strong></td>
+</tr>
+<tr>
+<td>Público infantil, escola, tablets variados</td>
+<td><strong>2.5D</strong></td>
+</tr>
+<tr>
+<td>Quer animações ricas (acenar, comemorar) sem 3D</td>
+<td><strong>2.5D</strong></td>
+</tr>
+<tr>
+<td>Quer avatar rotacionável estilo “boneco 3D”</td>
+<td><strong>3D</strong></td>
+</tr>
+<tr>
+<td>Planeja metaverso / cenário 3D no futuro</td>
+<td><strong>3D</strong></td>
+</tr>
+<tr>
+<td>Orçamento maior e artista 3D disponível</td>
+<td><strong>3D</strong></td>
+</tr>
+</tbody></table>
+<h3>3.4 Referência rápida — 2D puro (alternativa)</h3>
+<p>Para comparação, <strong>2D em camadas PNG</strong> (sem Spine) seria a opção mais barática (~40% menos horas que 2.5D), porém <strong>sem animação corporal fluida</strong> — emotes seriam CSS simples (balançar personagem inteiro). Não detalhado nesta proposta, mas citado como plano C.</p>
+<hr>
+<h2>4. Escopo funcional comum (2.5D e 3D)</h2>
+<p>Ambas as opções incluem o <strong>mesmo backend</strong> e <strong>mesmas regras de negócio</strong>; muda principalmente o <strong>frontend React</strong> e o <strong>formato dos assets</strong>.</p>
+<h3>4.1 Funcionalidades</h3>
+<p><strong>Aluno (React)</strong>  </p>
+<ul>
+<li>Visualizar avatar atual  </li>
+<li>Editor por abas/slots: base, cabelo, camisa, calçado, acessório  </li>
+<li>Equipar apenas peças <strong>possuídas</strong>  </li>
+<li>Pré-visualização destructure bloqueada (silhueta ou modelo cinza)  </li>
+<li>Salvar customização  </li>
+<li>Usar emote → animação vinculada (ex.: 👋 = acenar)  </li>
+<li>Exibir avatar no perfil e ranking (thumbnail)</li>
+</ul>
+<p><strong>Administrador (Laravel Blade)</strong>  </p>
+<ul>
+<li>CRUD de peças por slot, raridade, unidade  </li>
+<li>Upload de assets (PNG/sprites/Spine/GLB conforme opção)  </li>
+<li>Ativar/desativar peças  </li>
+<li>Associar peça à roleta/loja (integração)</li>
+</ul>
+<p><strong>API (Laravel JSON)</strong>  </p>
+<ul>
+<li><code>GET /api/avatar</code> — configuração atual + URLs dos assets  </li>
+<li><code>PUT /api/avatar</code> — salvar slots equipados + cores  </li>
+<li><code>GET /api/avatar/pecas</code> — catálogo com <code>possui: true/false</code>  </li>
+<li><code>GET /api/auth/me</code> — incluir resumo do avatar  </li>
+<li>Integração: roleta/loja/missões desbloqueiam <code>aluno_avatar_pecas</code></li>
+</ul>
+<h3>4.2 Modelo de dados (resumo)</h3>
+<pre><code class="language-text">avatar_pecas
+  id, unidade_id, titulo, slot, asset_url, thumbnail_url,
+  tipo_asset (spine|glb|sprite|png), raridade, coins_loja, status, meta_json
+
+aluno_avatar_pecas
+  aluno_id, avatar_peca_id, quantidade, desbloqueado_em
+
+aluno_avatars
+  aluno_id, base_id, configuracao_json, thumbnail_url, updated_at
+</code></pre>
+<hr>
+<h2>5. Detalhamento do desenvolvimento por parte</h2>
+<h3>Legenda</h3>
+<ul>
+<li><strong>Backend</strong> = Laravel (API, banco, painel admin, integrações)  </li>
+<li><strong>Frontend</strong> = React (app aluno)  </li>
+<li><strong>QA</strong> = testes manuais, ajustes, documentação  </li>
+<li>Horas são estimativas para <strong>1 desenvolvedor full-stack</strong> familiarizado com o projeto</li>
+</ul>
+<hr>
+<h2>6. Opção A — Avatar 2.5D</h2>
+<h3>6.1 Premissas técnicas</h3>
+<ul>
+<li>Personagem base exportado em <strong>Spine</strong> (ou Lottie para emotes pontuais)  </li>
+<li>Peças modulares como <strong>attachments/skins</strong> Spine OU sprite sheets por animação  </li>
+<li>React: <code>@esotericsoftware/spine-webgl</code> ou <code>spine-react</code> / Lottie para emotes  </li>
+<li>5 emotes animados iniciais: idle, wave, celebrate, jump, thumbs</li>
+</ul>
+<h3>6.2 Breakdown de horas</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Parte</th>
+<th>Descrição</th>
+<th align="right">Horas</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>A1</strong></td>
+<td><strong>Backend — Fundação</strong></td>
+<td>Migrations, models, relacionamentos, seeders de exemplo</td>
+<td align="right">6</td>
+</tr>
+<tr>
+<td><strong>A2</strong></td>
+<td><strong>Backend — API avatar</strong></td>
+<td>GET/PUT avatar, listagem peças, validação de posse, equipar</td>
+<td align="right">11</td>
+</tr>
+<tr>
+<td><strong>A3</strong></td>
+<td><strong>Backend — Painel admin</strong></td>
+<td>CRUD peças, upload assets/thumbnail, filtros por slot/unidade</td>
+<td align="right">13</td>
+</tr>
+<tr>
+<td><strong>A4</strong></td>
+<td><strong>Backend — Integrações</strong></td>
+<td>Desbloqueio via roleta, loja (coins), inventário unificado</td>
+<td align="right">8</td>
+</tr>
+<tr>
+<td><strong>A5</strong></td>
+<td><strong>Backend — Thumbnail</strong></td>
+<td>Geração de preview estático (frame Spine ou composição PNG) para ranking</td>
+<td align="right">6</td>
+</tr>
+<tr>
+<td><strong>A6</strong></td>
+<td><strong>Backend — Emotes</strong></td>
+<td>Campo <code>animacao</code> nos emotes, endpoint usar emote, duração</td>
+<td align="right">5</td>
+</tr>
+<tr>
+<td><strong>A7</strong></td>
+<td><strong>Frontend — Setup Spine/Lottie</strong></td>
+<td>Integração biblioteca, loader, cache, fallback loading</td>
+<td align="right">9</td>
+</tr>
+<tr>
+<td><strong>A8</strong></td>
+<td><strong>Frontend — Avatar viewer</strong></td>
+<td>Canvas/player, idle loop, troca de skins/attachments</td>
+<td align="right">14</td>
+</tr>
+<tr>
+<td><strong>A9</strong></td>
+<td><strong>Frontend — Editor</strong></td>
+<td>UI abas, grid peças, bloqueado/desbloqueado, salvar</td>
+<td align="right">16</td>
+</tr>
+<tr>
+<td><strong>A10</strong></td>
+<td><strong>Frontend — Emotes</strong></td>
+<td>State machine idle → emote → idle, 5 animações mapeadas</td>
+<td align="right">12</td>
+</tr>
+<tr>
+<td><strong>A11</strong></td>
+<td><strong>Frontend — Perfil/Ranking</strong></td>
+<td>Exibir avatar/thumbnail, integração <code>/auth/me</code></td>
+<td align="right">6</td>
+</tr>
+<tr>
+<td><strong>A12</strong></td>
+<td><strong>Frontend — API client</strong></td>
+<td>Hooks, tipos TypeScript, tratamento erros, loading</td>
+<td align="right">6</td>
+</tr>
+<tr>
+<td><strong>A13</strong></td>
+<td><strong>QA + Docs</strong></td>
+<td>Testes E2E manuais, <code>API.md</code>, ajustes pós-integração</td>
+<td align="right">7</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td><strong>Subtotal Opção 2.5D</strong></td>
+<td align="right"><strong>119 h</strong></td>
+</tr>
+</tbody></table>
+<h3>6.3 Custos — Opção 2.5D</h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Cálculo</th>
+<th align="right">Valor</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Desenvolvimento (119 h × R$ 80)</td>
+<td>119 × 80</td>
+<td align="right">R$ 9.520,00</td>
+</tr>
+<tr>
+<td><strong>Valor fechado proposta 2.5D</strong></td>
+<td></td>
+<td align="right"><strong>R$ 9.500,00</strong></td>
+</tr>
+</tbody></table>
+<h3>6.4 Arte necessária (não incluída no valor acima)</h3>
+<table>
+<thead>
+<tr>
+<th>Entregável artístico</th>
+<th>Quantidade sugerida</th>
+<th>Observação</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Personagem base Spine (M/F)</td>
+<td>2</td>
+<td>Com rig e skin default</td>
+</tr>
+<tr>
+<td>Peças modulares (slots)</td>
+<td>15–20</td>
+<td>Cabelo, roupa, calçado, etc.</td>
+</tr>
+<tr>
+<td>Animações</td>
+<td>6</td>
+<td>idle, wave, celebrate, jump, thumbs, sleep</td>
+</tr>
+<tr>
+<td>Thumbnails</td>
+<td>Automático ou 1 por peça</td>
+<td>Pode ser gerado no admin</td>
+</tr>
+</tbody></table>
+<p><em>Orçamento de arte: negociar à parte com ilustrador/animador Spine.</em></p>
+<h3>6.5 Prazo estimado</h3>
+<table>
+<thead>
+<tr>
+<th>Cenário</th>
+<th>Duração</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 dev full-time (40 h/sem)</td>
+<td>~3 semanas</td>
+</tr>
+<tr>
+<td>1 dev part-time (20 h/sem)</td>
+<td>~6 semanas</td>
+</tr>
+</tbody></table>
+<p><em>Depende de assets Spine prontos; atraso na arte bloqueia A7–A10.</em></p>
+<hr>
+<h2>7. Opção B — Avatar 3D</h2>
+<h3>7.1 Premissas técnicas</h3>
+<ul>
+<li>Modelo base <strong>GLB</strong> (masculino/feminino) com skeleton compartilhado  </li>
+<li>Peças 3D modulares (mesh swap ou skinned mesh)  </li>
+<li>React: <code>@react-three/fiber</code> + <code>@react-three/drei</code> + <code>three</code>  </li>
+<li>OrbitControls (rotação), iluminação básica, HDR opcional  </li>
+<li>Emotes: animações clip no GLB ou overlay 2D (emoji + tween)</li>
+</ul>
+<h3>7.2 Breakdown de horas</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Parte</th>
+<th>Descrição</th>
+<th align="right">Horas</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>B1</strong></td>
+<td><strong>Backend — Fundação</strong></td>
+<td>Migrations, models (mesma base da opção A)</td>
+<td align="right">8</td>
+</tr>
+<tr>
+<td><strong>B2</strong></td>
+<td><strong>Backend — API avatar</strong></td>
+<td>GET/PUT avatar, peças GLB, metadados materiais/cores</td>
+<td align="right">16</td>
+</tr>
+<tr>
+<td><strong>B3</strong></td>
+<td><strong>Backend — Painel admin</strong></td>
+<td>CRUD + upload GLB/ thumbnails + validação tamanho/mime</td>
+<td align="right">19</td>
+</tr>
+<tr>
+<td><strong>B4</strong></td>
+<td><strong>Backend — Integrações</strong></td>
+<td>Roleta, loja, desbloqueio (igual 2.5D)</td>
+<td align="right">11</td>
+</tr>
+<tr>
+<td><strong>B5</strong></td>
+<td><strong>Backend — Thumbnail</strong></td>
+<td>Render preview (screenshot server-side ou placeholder)</td>
+<td align="right">11</td>
+</tr>
+<tr>
+<td><strong>B6</strong></td>
+<td><strong>Backend — Emotes</strong></td>
+<td>Mapeamento emote → animation clip / overlay</td>
+<td align="right">8</td>
+</tr>
+<tr>
+<td><strong>B7</strong></td>
+<td><strong>Frontend — Setup R3F</strong></td>
+<td>Canvas, lights, OrbitControls, DRACO/GLTF loader</td>
+<td align="right">16</td>
+</tr>
+<tr>
+<td><strong>B8</strong></td>
+<td><strong>Frontend — Avatar 3D core</strong></td>
+<td>Carregar base, anexar peças, materiais, cores</td>
+<td align="right">29</td>
+</tr>
+<tr>
+<td><strong>B9</strong></td>
+<td><strong>Frontend — Editor 3D</strong></td>
+<td>UI slots + preview 3D ao vivo, peças bloqueadas (wireframe/cinza)</td>
+<td align="right">26</td>
+</tr>
+<tr>
+<td><strong>B10</strong></td>
+<td><strong>Frontend — Animações</strong></td>
+<td>idle + 5 emotes (clips GLB ou procedural tween)</td>
+<td align="right">23</td>
+</tr>
+<tr>
+<td><strong>B11</strong></td>
+<td><strong>Frontend — Performance</strong></td>
+<td>LOD, lazy load, cache GLB, mobile fallback</td>
+<td align="right">13</td>
+</tr>
+<tr>
+<td><strong>B12</strong></td>
+<td><strong>Frontend — Perfil/Ranking</strong></td>
+<td>Thumbnail estático + link para viewer</td>
+<td align="right">10</td>
+</tr>
+<tr>
+<td><strong>B13</strong></td>
+<td><strong>Frontend — API client</strong></td>
+<td>Hooks, types, error boundaries WebGL</td>
+<td align="right">10</td>
+</tr>
+<tr>
+<td><strong>B14</strong></td>
+<td><strong>QA + Docs</strong></td>
+<td>Testes cross-browser, GPU fraca, documentação</td>
+<td align="right">13</td>
+</tr>
+<tr>
+<td></td>
+<td></td>
+<td><strong>Subtotal Opção 3D</strong></td>
+<td align="right"><strong>213 h</strong></td>
+</tr>
+</tbody></table>
+<h3>7.3 Custos — Opção 3D</h3>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Cálculo</th>
+<th align="right">Valor</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Desenvolvimento (213 h × R$ 80)</td>
+<td>213 × 80</td>
+<td align="right">R$ 17.040,00</td>
+</tr>
+<tr>
+<td><strong>Valor fechado proposta 3D</strong></td>
+<td></td>
+<td align="right"><strong>R$ 17.000,00</strong></td>
+</tr>
+</tbody></table>
+<h3>7.4 Arte necessária (não incluída)</h3>
+<table>
+<thead>
+<tr>
+<th>Entregável artístico</th>
+<th>Quantidade sugerida</th>
+<th>Observação</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Modelo base rigged (M/F)</td>
+<td>2</td>
+<td>GLB, ~5k–15k tris low-poly stylized</td>
+</tr>
+<tr>
+<td>Peças modulares</td>
+<td>15–20</td>
+<td>Mesmo skeleton</td>
+</tr>
+<tr>
+<td>Animações (clips)</td>
+<td>6</td>
+<td>Exportadas no GLB ou separadas</td>
+</tr>
+<tr>
+<td>Texturas</td>
+<td>PBR ou solid colors</td>
+<td>Por peça</td>
+</tr>
+</tbody></table>
+<p><em>Orçamento 3D costuma ser <strong>superior</strong> ao 2.5D.</em></p>
+<h3>7.5 Prazo estimado</h3>
+<table>
+<thead>
+<tr>
+<th>Cenário</th>
+<th>Duração</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1 dev full-time</td>
+<td>~5,5 semanas</td>
+</tr>
+<tr>
+<td>1 dev part-time</td>
+<td>~11 semanas</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>8. Comparativo financeiro resumido</h2>
+<table>
+<thead>
+<tr>
+<th>Opção</th>
+<th align="right">Horas dev</th>
+<th align="right">Referência (R$ 80/h)</th>
+<th align="right"><strong>Valor fechado</strong></th>
+<th align="right">Prazo (40h/sem)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>2.5D</strong></td>
+<td align="right">119 h</td>
+<td align="right">R$ 9.520</td>
+<td align="right"><strong>R$ 9.500</strong></td>
+<td align="right">~3 semanas</td>
+</tr>
+<tr>
+<td><strong>3D</strong></td>
+<td align="right">213 h</td>
+<td align="right">R$ 17.040</td>
+<td align="right"><strong>R$ 17.000</strong></td>
+<td align="right">~5,5 semanas</td>
+</tr>
+<tr>
+<td><strong>Diferença (3D − 2.5D)</strong></td>
+<td align="right">+94 h</td>
+<td align="right">+R$ 7.520</td>
+<td align="right"><strong>+R$ 7.500</strong></td>
+<td align="right">+2,5 sem</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>9. Fases de entrega (ambas as opções)</h2>
+<h3>Fase 1 — MVP (entrega parcial)</h3>
+<p><strong>Escopo:</strong> base + 3 slots (cabelo, camisa, calçado) + idle + 2 emotes + API + admin básico  </p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th align="right">2.5D</th>
+<th align="right">3D</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Horas</td>
+<td align="right">69 h</td>
+<td align="right">125 h</td>
+</tr>
+<tr>
+<td>Valor</td>
+<td align="right"><strong>R$ 5.500</strong></td>
+<td align="right"><strong>R$ 10.000</strong></td>
+</tr>
+</tbody></table>
+<h3>Fase 2 — Completo</h3>
+<p><strong>Escopo:</strong> todos os slots, 5 emotes, ranking, roleta/loja, polish  </p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th align="right">2.5D</th>
+<th align="right">3D</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Horas adicionais</td>
+<td align="right">50 h</td>
+<td align="right">88 h</td>
+</tr>
+<tr>
+<td>Valor adicional</td>
+<td align="right"><strong>R$ 4.000</strong></td>
+<td align="right"><strong>R$ 7.000</strong></td>
+</tr>
+</tbody></table>
+<p><em>Fase 1 permite validar com usuários antes de investir no restante.</em></p>
+<hr>
+<h2>10. Riscos e dependências</h2>
+<table>
+<thead>
+<tr>
+<th>Risco</th>
+<th>Impacto</th>
+<th>Mitigação</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Arte atrasada</td>
+<td>Bloqueia frontend</td>
+<td>MVP com assets placeholder</td>
+</tr>
+<tr>
+<td>Peças não encaixam (3D)</td>
+<td>+20–40 h extras</td>
+<td>Protótipo com 2 peças antes do lote</td>
+</tr>
+<tr>
+<td>Performance mobile (3D)</td>
+<td>UX ruim</td>
+<td>Fallback thumbnail 2D + viewer simplificado</td>
+</tr>
+<tr>
+<td>Spine sem licença comercial</td>
+<td>Legal</td>
+<td>Confirmar licença Spine ou usar Lottie</td>
+</tr>
+<tr>
+<td>Escopo creep (AR, chat avatar)</td>
+<td>Orçamento estoura</td>
+<td>Contrato por fases</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>11. O que <strong>não</strong> está incluído</h2>
+<ul>
+<li>Hospedagem CDN para GLB (configuração básica pode ser incluída; custo mensal não)  </li>
+<li>Sistema de evolução/nível do personagem (RPG)  </li>
+<li>Multiplayer / salas 3D</li>
+</ul>
+<hr>
+<h2>12. Recomendação</h2>
+<p>Para o <strong>Game School</strong> (contexto escolar, gamificação, React web, integração com roleta já existente):</p>
+<blockquote>
+<p><strong>Recomenda-se a Opção 2.5D (Spine/Lottie)</strong><br>Melhor equilíbrio entre <strong>custo (R$ 9.500)</strong>, <strong>prazo (~3 semanas)</strong> e <strong>animações de emote</strong> (acenar, comemorar).<br>A Opção 3D (<strong>R$ 17.000</strong>) faz sentido se houver requisito explícito de <strong>rotação 360°</strong> e orçamento de arte 3D.</p>
+</blockquote>
+<hr>
+
+
+</body>
+</html>

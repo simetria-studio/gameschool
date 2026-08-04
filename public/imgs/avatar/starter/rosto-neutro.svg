@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+  <!-- expressão neutra / feliz  só face overlay na cabeça -->
+  <ellipse cx="84" cy="60" rx="7" ry="9" fill="#3D2914"/>
+  <ellipse cx="116" cy="60" rx="7" ry="9" fill="#3D2914"/>
+  <circle cx="86" cy="57" r="2.5" fill="#FFF"/>
+  <circle cx="118" cy="57" r="2.5" fill="#FFF"/>
+  <path d="M92 78c4 6 12 6 16 0" fill="none" stroke="#3D2914" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="70" cy="72" rx="8" ry="4" fill="#FF9B8A" opacity=".5"/>
+  <ellipse cx="130" cy="72" rx="8" ry="4" fill="#FF9B8A" opacity=".5"/>
+</svg>

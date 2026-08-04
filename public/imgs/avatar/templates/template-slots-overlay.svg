@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 820" width="512" height="820">
+  <title>Overlay de slots  o que cada layer pode ocupar</title>
+  <rect width="512" height="820" fill="#0B1C2E"/>
+
+  <!-- base (corpo)  cinza -->
+  <g opacity=".35">
+    <rect x="200" y="520" width="44" height="150" rx="22" fill="#64748B"/>
+    <rect x="268" y="520" width="44" height="150" rx="22" fill="#64748B"/>
+    <rect x="180" y="285" width="152" height="245" rx="36" fill="#64748B"/>
+    <rect x="105" y="300" width="42" height="150" rx="21" fill="#64748B"/>
+    <rect x="365" y="300" width="42" height="150" rx="21" fill="#64748B"/>
+    <circle cx="126" cy="460" r="24" fill="#64748B"/>
+    <circle cx="386" cy="460" r="24" fill="#64748B"/>
+    <rect x="230" y="255" width="52" height="40" rx="14" fill="#64748B"/>
+    <ellipse cx="256" cy="155" rx="105" ry="115" fill="#64748B"/>
+  </g>
+
+  <!-- cabelo  rosa -->
+  <path d="M150 180c0-70 48-125 106-125s106 55 106 125c0 20-10 35-25 40 0-45-30-70-81-70s-81 25-81 70c-15-5-25-20-25-40z"
+        fill="#F472B6" fill-opacity=".35" stroke="#F472B6" stroke-width="3"/>
+  <text x="256" y="55" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700" fill="#F472B6">cabelo</text>
+
+  <!-- roupa  verde -->
+  <rect x="100" y="290" width="50" height="135" rx="20" fill="#34D399" fill-opacity=".4" stroke="#34D399" stroke-width="3"/>
+  <rect x="362" y="290" width="50" height="135" rx="20" fill="#34D399" fill-opacity=".4" stroke="#34D399" stroke-width="3"/>
+  <rect x="172" y="275" width="168" height="255" rx="28" fill="#34D399" fill-opacity=".4" stroke="#34D399" stroke-width="3"/>
+  <text x="256" y="400" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700" fill="#34D399">roupa</text>
+
+  <!-- calcado  amarelo -->
+  <rect x="175" y="675" width="162" height="95" rx="18" fill="#FBBF24" fill-opacity=".4" stroke="#FBBF24" stroke-width="3"/>
+  <text x="256" y="730" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="20" font-weight="700" fill="#FBBF24">calcado</text>
+
+  <!-- acessorio olhos  azul -->
+  <rect x="165" y="135" width="182" height="55" rx="16" fill="#38BDF8" fill-opacity=".35" stroke="#38BDF8" stroke-width="3"/>
+  <text x="256" y="170" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" font-weight="700" fill="#7DD3FC">acessorio (óculos)</text>
+
+  <!-- acessorio pescoço -->
+  <path d="M195 255c20 35 61 50 61 50s41-15 61-50" fill="none" stroke="#A78BFA" stroke-width="6" stroke-linecap="round" opacity=".7"/>
+  <text x="256" y="250" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="700" fill="#C4B5FD">acessorio (colar)</text>
+
+  <text x="256" y="800" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="13" fill="#94A3B8">Cada peça = 1 PNG transparente só na sua cor/área</text>
+</svg>

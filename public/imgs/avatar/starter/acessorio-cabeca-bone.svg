@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+  <!-- boné -->
+  <path d="M60 52c4-28 22-42 40-42s36 14 40 42c-8 4-24 6-40 6s-32-2-40-6z" fill="#1A202C" stroke="#0D1117" stroke-width="2.5"/>
+  <path d="M52 52h96c4 0 6 2 4 5l-6 8H58l-6-8c-2-3 0-5 4-5z" fill="#2D3748" stroke="#0D1117" stroke-width="2"/>
+  <path d="M100 18v12" stroke="#FFD54A" stroke-width="3" stroke-linecap="round"/>
+</svg>

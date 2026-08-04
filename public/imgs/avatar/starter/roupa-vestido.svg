@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+  <defs>
+    <linearGradient id="c3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FBB6CE"/>
+      <stop offset="100%" stop-color="#D53F8C"/>
+    </linearGradient>
+  </defs>
+  <rect x="42" y="116" width="20" height="36" rx="10" fill="#ED64A6" stroke="#702459" stroke-width="2.5"/>
+  <rect x="138" y="116" width="20" height="36" rx="10" fill="#ED64A6" stroke="#702459" stroke-width="2.5"/>
+  <!-- saia / corpo em A -->
+  <path d="M74 108c0-6 8-12 26-12s26 6 26 12l8 100c0 8-10 14-34 14s-34-6-34-14l8-100z" fill="url(#c3)" stroke="#702459" stroke-width="2.5"/>
+  <ellipse cx="100" cy="110" rx="14" ry="8" fill="#B83280" stroke="#702459" stroke-width="2"/>
+  <ellipse cx="100" cy="108" rx="8" ry="5" fill="#FFE0C4"/>
+  <!-- laço -->
+  <circle cx="100" cy="150" r="6" fill="#FFF0F6" stroke="#702459" stroke-width="1.5"/>
+  <path d="M88 150c-6-8-14-6-14 0 4 2 10 2 14 0z" fill="#FFB6D0" stroke="#702459" stroke-width="1.5"/>
+  <path d="M112 150c6-8 14-6 14 0-4 2-10 2-14 0z" fill="#FFB6D0" stroke="#702459" stroke-width="1.5"/>
+</svg>

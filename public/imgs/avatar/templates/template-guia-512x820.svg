@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 820" width="512" height="820">
+  <title>Template guia avatar 512×820  Game School</title>
+  <!-- fundo -->
+  <rect width="512" height="820" fill="#0F2744"/>
+  <!-- safe margin -->
+  <rect x="16" y="16" width="480" height="788" fill="none" stroke="#38BDF8" stroke-width="2" stroke-dasharray="8 6" opacity=".5"/>
+
+  <!-- grid 64 -->
+  <g stroke="#FFFFFF" stroke-width="1" opacity=".08">
+    <path d="M64 0V820M128 0V820M192 0V820M256 0V820M320 0V820M384 0V820M448 0V820"/>
+    <path d="M0 64H512M0 128H512M0 192H512M0 256H512M0 320H512M0 384H512M0 448H512M0 512H512M0 576H512M0 640H512M0 704H512M0 768H512"/>
+  </g>
+  <!-- centro vertical -->
+  <line x1="256" y1="0" x2="256" y2="820" stroke="#FFD54A" stroke-width="1.5" stroke-dasharray="4 4" opacity=".7"/>
+
+  <!-- regiões -->
+  <g fill="none" stroke-width="2" opacity=".85">
+    <!-- cabeça -->
+    <rect x="148" y="48" width="216" height="236" rx="20" stroke="#F472B6"/>
+    <!-- tronco -->
+    <rect x="170" y="280" width="172" height="250" rx="16" stroke="#34D399"/>
+    <!-- braço esq -->
+    <rect x="90" y="295" width="55" height="160" rx="12" stroke="#60A5FA"/>
+    <!-- braço dir -->
+    <rect x="367" y="295" width="55" height="160" rx="12" stroke="#60A5FA"/>
+    <!-- pernas -->
+    <rect x="195" y="520" width="50" height="160" rx="10" stroke="#A78BFA"/>
+    <rect x="267" y="520" width="50" height="160" rx="10" stroke="#A78BFA"/>
+    <!-- pés / calçado -->
+    <rect x="168" y="680" width="176" height="100" rx="12" stroke="#FBBF24"/>
+  </g>
+
+  <!-- labels -->
+  <g font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700" fill="#E2E8F0">
+    <text x="256" y="36" text-anchor="middle" fill="#38BDF8">512 × 820 · Game School Avatar</text>
+    <text x="256" y="175" text-anchor="middle" fill="#F472B6">CABEÇA</text>
+    <text x="256" y="410" text-anchor="middle" fill="#34D399">TRONCO / ROUPA</text>
+    <text x="117" y="380" text-anchor="middle" fill="#60A5FA" font-size="14">BRAÇO</text>
+    <text x="395" y="380" text-anchor="middle" fill="#60A5FA" font-size="14">BRAÇO</text>
+    <text x="256" y="600" text-anchor="middle" fill="#A78BFA">PERNAS</text>
+    <text x="256" y="735" text-anchor="middle" fill="#FBBF24">CALÇADO</text>
+  </g>
+
+  <!-- cruz olhos -->
+  <g stroke="#F472B6" stroke-width="1.5" opacity=".6">
+    <line x1="190" y1="160" x2="230" y2="160"/>
+    <line x1="282" y1="160" x2="322" y2="160"/>
+    <circle cx="210" cy="160" r="4" fill="#F472B6"/>
+    <circle cx="302" cy="160" r="4" fill="#F472B6"/>
+  </g>
+  <text x="256" y="148" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="12" fill="#F9A8D4">linha dos olhos (óculos)</text>
+</svg>

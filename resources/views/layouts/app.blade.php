@@ -289,6 +289,12 @@
                             <i class="bi bi-backpack"></i>
                             <span>INVENTÁRIO</span>
                         </a>
+                        @if ($isMaster || $isDirecao)
+                        <a class="nav-link {{ request()->routeIs('avatar-pecas.*') ? 'active' : '' }}" href="{{ route('avatar-pecas.index') }}">
+                            <i class="bi bi-person-bounding-box"></i>
+                            <span>AVATAR / PEÇAS</span>
+                        </a>
+                        @endif
                         <a class="nav-link {{ request()->routeIs('atitudes.*') ? 'active' : '' }}" href="{{ route('atitudes.index') }}">
                             <i class="bi bi-hand-thumbs-up"></i>
                             <span>ATITUDES</span>

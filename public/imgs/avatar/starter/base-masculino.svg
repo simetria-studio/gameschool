@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+  <defs>
+    <linearGradient id="sk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD7B5"/>
+      <stop offset="100%" stop-color="#E8B48A"/>
+    </linearGradient>
+  </defs>
+  <rect x="78" y="200" width="18" height="58" rx="9" fill="url(#sk)" stroke="#3D2914" stroke-width="2"/>
+  <rect x="104" y="200" width="18" height="58" rx="9" fill="url(#sk)" stroke="#3D2914" stroke-width="2"/>
+  <circle cx="48" cy="178" r="10" fill="url(#sk)" stroke="#3D2914" stroke-width="2"/>
+  <circle cx="152" cy="178" r="10" fill="url(#sk)" stroke="#3D2914" stroke-width="2"/>
+  <rect x="42" y="118" width="16" height="58" rx="8" fill="url(#sk)" stroke="#3D2914" stroke-width="2"/>
+  <rect x="142" y="118" width="16" height="58" rx="8" fill="url(#sk)" stroke="#3D2914" stroke-width="2"/>
+  <!-- underwear / corpo base -->
+  <rect x="72" y="112" width="56" height="92" rx="16" fill="url(#sk)" stroke="#3D2914" stroke-width="2"/>
+  <path d="M78 188h44c2 0 4 2 4 4v10H74v-10c0-2 2-4 4-4z" fill="#1A202C" stroke="#0D1117" stroke-width="2"/>
+  <rect x="90" y="98" width="20" height="18" rx="6" fill="url(#sk)" stroke="#3D2914" stroke-width="2"/>
+  <ellipse cx="100" cy="62" rx="42" ry="46" fill="url(#sk)" stroke="#3D2914" stroke-width="2.5"/>
+  <ellipse cx="58" cy="66" rx="8" ry="10" fill="#F0C49A" stroke="#3D2914" stroke-width="2"/>
+  <ellipse cx="142" cy="66" rx="8" ry="10" fill="#F0C49A" stroke="#3D2914" stroke-width="2"/>
+</svg>

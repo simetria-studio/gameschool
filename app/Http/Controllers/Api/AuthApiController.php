@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Support\AutenticacaoUtil;
+use App\Support\AvatarAluno;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -79,7 +80,12 @@ class AuthApiController extends Controller
 
     private function serializeUser(User $user): array
     {
-        $user->loadMissing(['unidade:id,titulo', 'turmas:id,nome', 'aluno:id,user_id,nome,turma_id,unidade_id,coins,xp']);
+        $user->loadMissing([
+            'unidade:id,titulo',
+            'turmas:id,nome',
+            'aluno:id,user_id,nome,turma_id,unidade_id,coins,xp',
+            'aluno.avatar',
+        ]);
 
         return [
             'id' => $user->id,
@@ -100,6 +106,7 @@ class AuthApiController extends Controller
                 'coins' => $user->aluno->coins,
                 'xp' => $user->aluno->xp,
             ] : null,
+            'avatar' => AvatarAluno::resumoParaAuth($user->aluno),
         ];
     }
 }

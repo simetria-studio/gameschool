@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 820" width="512" height="820">
+  <title>Silhueta base  alinhamento</title>
+  <rect width="512" height="820" fill="#0B1C2E"/>
+  <!-- silhueta neutra (proporção chibi) -->
+  <g fill="#334155" stroke="#94A3B8" stroke-width="3" opacity=".95">
+    <!-- pernas -->
+    <rect x="200" y="520" width="44" height="150" rx="22"/>
+    <rect x="268" y="520" width="44" height="150" rx="22"/>
+    <!-- tronco -->
+    <rect x="180" y="285" width="152" height="245" rx="36"/>
+    <!-- braços -->
+    <rect x="105" y="300" width="42" height="150" rx="21"/>
+    <rect x="365" y="300" width="42" height="150" rx="21"/>
+    <!-- mãos -->
+    <circle cx="126" cy="460" r="24"/>
+    <circle cx="386" cy="460" r="24"/>
+    <!-- pescoço -->
+    <rect x="230" y="255" width="52" height="40" rx="14"/>
+    <!-- cabeça -->
+    <ellipse cx="256" cy="155" rx="105" ry="115"/>
+    <!-- orelhas -->
+    <ellipse cx="148" cy="165" rx="18" ry="24"/>
+    <ellipse cx="364" cy="165" rx="18" ry="24"/>
+  </g>
+  <!-- eixo -->
+  <line x1="256" y1="20" x2="256" y2="800" stroke="#FFD54A" stroke-width="2" stroke-dasharray="6 6" opacity=".5"/>
+  <text x="256" y="40" text-anchor="middle" font-family="Segoe UI, Arial, sans-serif" font-size="16" fill="#94A3B8">Silhueta base · desenhar peças alinhadas a isto</text>
+</svg>

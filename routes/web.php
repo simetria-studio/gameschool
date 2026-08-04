@@ -3,6 +3,7 @@
 use App\Http\Controllers\AtitudeController;
 use App\Http\Controllers\AlunoController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AvatarPecaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ContaController;
 use App\Http\Controllers\InventarioController;
@@ -21,6 +22,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+Route::view('/politica-de-privacidade', 'legal.politica-privacidade')
+    ->name('legal.privacidade');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -50,6 +54,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/quizzes/{quiz}/tentativas', [QuizController::class, 'tentativas'])->name('quizzes.tentativas')->middleware('role:master,direcao,professor');
     Route::get('/quizzes/{quiz}/tentativas/{tentativa}', [QuizController::class, 'showTentativa'])->name('quizzes.tentativas.show')->middleware('role:master,direcao,professor');
     Route::get('/inventarios', [InventarioController::class, 'index'])->name('inventarios.index')->middleware('role:master,direcao,professor');
+    Route::get('/avatar-pecas', [AvatarPecaController::class, 'index'])->name('avatar-pecas.index')->middleware('role:master,direcao');
+    Route::post('/avatar-pecas', [AvatarPecaController::class, 'store'])->name('avatar-pecas.store')->middleware('role:master,direcao');
+    Route::put('/avatar-pecas/{avatarPeca}', [AvatarPecaController::class, 'update'])->name('avatar-pecas.update')->middleware('role:master,direcao');
+    Route::delete('/avatar-pecas/{avatarPeca}', [AvatarPecaController::class, 'destroy'])->name('avatar-pecas.destroy')->middleware('role:master,direcao');
     Route::get('/roleta-colecionaveis', [RoletaColecionavelController::class, 'index'])->name('roleta-colecionaveis.index')->middleware('role:master,direcao,professor');
     Route::post('/roleta-colecionaveis', [RoletaColecionavelController::class, 'store'])->name('roleta-colecionaveis.store')->middleware('role:master,direcao,professor');
     Route::put('/roleta-colecionaveis/{roletaItem}', [RoletaColecionavelController::class, 'update'])->name('roleta-colecionaveis.update')->middleware('role:master,direcao,professor');

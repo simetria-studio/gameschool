@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+  <defs>
+    <linearGradient id="c2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#68D391"/>
+      <stop offset="100%" stop-color="#276749"/>
+    </linearGradient>
+  </defs>
+  <rect x="38" y="114" width="26" height="54" rx="12" fill="#48BB78" stroke="#1C4532" stroke-width="2.5"/>
+  <rect x="136" y="114" width="26" height="54" rx="12" fill="#48BB78" stroke="#1C4532" stroke-width="2.5"/>
+  <rect x="66" y="106" width="68" height="102" rx="16" fill="url(#c2)" stroke="#1C4532" stroke-width="2.5"/>
+  <!-- capuz -->
+  <path d="M74 108c0-20 12-34 26-34s26 14 26 34c-8-6-16-8-26-8s-18 2-26 8z" fill="#2F855A" stroke="#1C4532" stroke-width="2.5"/>
+  <!-- cordões -->
+  <line x1="90" y1="112" x2="90" y2="132" stroke="#FFD54A" stroke-width="3" stroke-linecap="round"/>
+  <line x1="110" y1="112" x2="110" y2="132" stroke="#FFD54A" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="90" cy="134" r="3.5" fill="#FFD54A" stroke="#1C4532" stroke-width="1.5"/>
+  <circle cx="110" cy="134" r="3.5" fill="#FFD54A" stroke="#1C4532" stroke-width="1.5"/>
+  <!-- bolso canguru -->
+  <path d="M82 156h36v28c0 6-6 10-12 10h-12c-6 0-12-4-12-10v-28z" fill="#2F855A" stroke="#1C4532" stroke-width="2"/>
+</svg>

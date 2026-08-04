@@ -4,7 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Notifications\Notifiable;
 
 class Aluno extends Model
@@ -63,5 +65,17 @@ class Aluno extends Model
     public function presentesEnviados(): HasMany
     {
         return $this->hasMany(AlunoPresente::class, 'remetente_id');
+    }
+
+    public function avatar(): HasOne
+    {
+        return $this->hasOne(AlunoAvatar::class);
+    }
+
+    public function avatarPecas(): BelongsToMany
+    {
+        return $this->belongsToMany(AvatarPeca::class, 'aluno_avatar_pecas')
+            ->withPivot('desbloqueado_em')
+            ->withTimestamps();
     }
 }

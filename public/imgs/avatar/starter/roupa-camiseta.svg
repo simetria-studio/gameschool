@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="200" height="320">
+  <defs>
+    <linearGradient id="c1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5BB0FF"/>
+      <stop offset="100%" stop-color="#2B6CB0"/>
+    </linearGradient>
+  </defs>
+  <!-- mangas cobrindo braços -->
+  <rect x="40" y="116" width="22" height="50" rx="11" fill="#3B8FE0" stroke="#1A365D" stroke-width="2.5"/>
+  <rect x="138" y="116" width="22" height="50" rx="11" fill="#3B8FE0" stroke="#1A365D" stroke-width="2.5"/>
+  <!-- corpo -->
+  <rect x="68" y="108" width="64" height="96" rx="14" fill="url(#c1)" stroke="#1A365D" stroke-width="2.5"/>
+  <!-- gola redonda -->
+  <ellipse cx="100" cy="112" rx="16" ry="10" fill="#1A4A8A" stroke="#1A365D" stroke-width="2"/>
+  <ellipse cx="100" cy="110" rx="10" ry="6" fill="#FFD7B5"/>
+  <!-- barra inferior -->
+  <rect x="68" y="188" width="64" height="16" rx="4" fill="#1A4A8A" stroke="#1A365D" stroke-width="2"/>
+  <!-- estrela simples (sem cruz) -->
+  <path d="M100 140l4 10h10l-8 6 3 10-9-6-9 6 3-10-8-6h10z" fill="#FFD54A" stroke="#1A365D" stroke-width="1.5"/>
+</svg>
