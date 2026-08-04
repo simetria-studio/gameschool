@@ -26,6 +26,9 @@ Route::get('/', function () {
 Route::view('/politica-de-privacidade', 'legal.politica-privacidade')
     ->name('legal.privacidade');
 
+Route::view('/detalhes-do-app', 'legal.detalhes-app')
+    ->name('legal.detalhes-app');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);

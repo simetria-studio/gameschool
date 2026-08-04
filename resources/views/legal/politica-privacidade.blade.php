@@ -308,7 +308,11 @@
 
         <footer>
             <p>© {{ date('Y') }} Game School. Todos os direitos reservados.</p>
-            <p>URL desta página: <a href="{{ url('/politica-de-privacidade') }}">{{ url('/politica-de-privacidade') }}</a></p>
+            <p>
+                <a href="{{ route('legal.detalhes-app') }}">Detalhes do App</a>
+                ·
+                URL desta página: <a href="{{ url('/politica-de-privacidade') }}">{{ url('/politica-de-privacidade') }}</a>
+            </p>
         </footer>
     </main>
 </body>
