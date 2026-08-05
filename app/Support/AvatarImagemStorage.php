@@ -37,7 +37,7 @@ class AvatarImagemStorage
 
         $destinoDir = public_path('imgs/avatar');
         if (! is_dir($destinoDir)) {
-            mkdir($destinoDir, 0755, true);
+            mkdir($destinoDir, 0775, true);
         }
 
         if (in_array($ext, ['zip'], true)) {
@@ -67,6 +67,14 @@ class AvatarImagemStorage
             self::$lastGeneratedThumb = $paths['thumb'];
 
             return $paths['asset'];
+        }
+
+        if (! is_writable($destinoDir)) {
+            throw new \RuntimeException(
+                'Sem permissão para gravar em '.$destinoDir.
+                '. No servidor: sudo chown -R www-data:www-data '.public_path('imgs/avatar').
+                ' && sudo chmod -R ug+rwX '.public_path('imgs/avatar')
+            );
         }
 
         $file->move($destinoDir, $nome);

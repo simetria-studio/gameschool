@@ -54,10 +54,7 @@ class AvatarLayerNormalizer
             throw new RuntimeException('Arquivo de avatar não encontrado para normalizar.');
         }
 
-        $destinoDir = public_path('imgs/avatar/normalized');
-        if (! is_dir($destinoDir)) {
-            mkdir($destinoDir, 0755, true);
-        }
+        $destinoDir = self::ensureWritableDir(public_path('imgs/avatar/normalized'));
 
         $slug = $nomeBase ?: ('peca-' . $slot);
         $slug = preg_replace('/[^a-z0-9\-]+/', '-', strtolower($slug)) ?: 'peca';
@@ -82,6 +79,33 @@ class AvatarLayerNormalizer
             'asset' => '/imgs/avatar/normalized/' . $assetName,
             'thumb' => '/imgs/avatar/normalized/' . $thumbName,
         ];
+    }
+
+    /**
+     * Garante pasta existente e gravável pelo PHP (www-data / nginx).
+     */
+    public static function ensureWritableDir(string $dir): string
+    {
+        if (! is_dir($dir)) {
+            if (! @mkdir($dir, 0775, true) && ! is_dir($dir)) {
+                throw new RuntimeException(
+                    'Não foi possível criar a pasta de avatar: '.$dir.
+                    '. No servidor, rode: sudo mkdir -p '.$dir.
+                    ' && sudo chown -R www-data:www-data '.dirname($dir).
+                    ' && sudo chmod -R ug+rwX '.dirname($dir)
+                );
+            }
+        }
+
+        if (! is_writable($dir)) {
+            throw new RuntimeException(
+                'Sem permissão para gravar em '.$dir.
+                '. No servidor, rode: sudo chown -R www-data:www-data '.dirname($dir).
+                ' && sudo chmod -R ug+rwX '.dirname($dir)
+            );
+        }
+
+        return $dir;
     }
 
     /** @return resource|\GdImage */
@@ -524,6 +548,14 @@ class AvatarLayerNormalizer
     /** @param  resource|\GdImage  $img */
     private static function savePng($img, string $path): void
     {
-        imagepng($img, $path, 6);
+        $ok = @imagepng($img, $path, 6);
+        if (! $ok || ! is_file($path)) {
+            throw new RuntimeException(
+                'Falha ao gravar PNG em '.$path.
+                '. Verifique permissões: sudo chown -R www-data:www-data '.dirname($path).
+                ' && sudo chmod -R ug+rwX '.dirname($path)
+            );
+        }
+        @chmod($path, 0664);
     }
 }
