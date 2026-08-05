@@ -54,8 +54,10 @@ class AvatarPecaController extends Controller
             'status' => $status,
             'canManageAllUnits' => $isMaster,
             'tamanhoMaxUpload' => AvatarImagemStorage::tamanhoMaximoRotulo(),
-            'slots' => AvatarPeca::SLOTS,
-            'slotLabels' => AvatarPeca::SLOT_LABELS,
+            'slots' => AvatarPeca::SLOTS_ATIVOS,
+            'slotLabels' => collect(AvatarPeca::SLOTS_ATIVOS)
+                ->mapWithKeys(fn ($s) => [$s => AvatarPeca::SLOT_LABELS[$s] ?? $s])
+                ->all(),
             'generos' => AvatarPeca::GENEROS,
             'raridades' => AvatarPeca::RARIDADES,
             'tiposAsset' => AvatarPeca::TIPOS_ASSET,
@@ -74,11 +76,22 @@ class AvatarPecaController extends Controller
         $validated = $this->validatePeca($request, true);
 
         if ($request->hasFile('arquivo')) {
-            $validated['asset_url'] = AvatarImagemStorage::uploadAsset($request->file('arquivo'));
+            $validated['asset_url'] = AvatarImagemStorage::uploadAsset(
+                $request->file('arquivo'),
+                null,
+                [
+                    'slot' => $validated['slot'],
+                    'genero' => $validated['genero'],
+                    'titulo' => $validated['titulo'],
+                    'tipo_asset' => $validated['tipo_asset'],
+                ],
+            );
         }
 
         if ($request->hasFile('thumbnail')) {
             $validated['thumbnail_url'] = AvatarImagemStorage::uploadThumbnail($request->file('thumbnail'));
+        } elseif (AvatarImagemStorage::$lastGeneratedThumb) {
+            $validated['thumbnail_url'] = AvatarImagemStorage::$lastGeneratedThumb;
         } else {
             $validated['thumbnail_url'] = $validated['asset_url'] ?? null;
         }
@@ -115,7 +128,13 @@ class AvatarPecaController extends Controller
         if ($request->hasFile('arquivo')) {
             $validated['asset_url'] = AvatarImagemStorage::uploadAsset(
                 $request->file('arquivo'),
-                $avatarPeca->asset_url
+                $avatarPeca->asset_url,
+                [
+                    'slot' => $validated['slot'],
+                    'genero' => $validated['genero'],
+                    'titulo' => $validated['titulo'],
+                    'tipo_asset' => $validated['tipo_asset'],
+                ],
             );
         }
 
@@ -124,6 +143,11 @@ class AvatarPecaController extends Controller
                 $request->file('thumbnail'),
                 $avatarPeca->thumbnail_url
             );
+        } elseif ($request->hasFile('arquivo') && AvatarImagemStorage::$lastGeneratedThumb) {
+            if ($avatarPeca->thumbnail_url !== $avatarPeca->asset_url) {
+                AvatarImagemStorage::delete($avatarPeca->thumbnail_url);
+            }
+            $validated['thumbnail_url'] = AvatarImagemStorage::$lastGeneratedThumb;
         }
 
         $validated['is_starter'] = $request->boolean('is_starter');
@@ -164,7 +188,7 @@ class AvatarPecaController extends Controller
         $rules = [
             'titulo' => ['required', 'string', 'max:255'],
             'unidade_id' => ['nullable', 'exists:unidades,id'],
-            'slot' => ['required', Rule::in(AvatarPeca::SLOTS)],
+            'slot' => ['required', Rule::in(AvatarPeca::SLOTS_ATIVOS)],
             'genero' => ['required', Rule::in(AvatarPeca::GENEROS)],
             'tipo_asset' => ['required', Rule::in(AvatarPeca::TIPOS_ASSET)],
             'raridade' => ['required', Rule::in(AvatarPeca::RARIDADES)],

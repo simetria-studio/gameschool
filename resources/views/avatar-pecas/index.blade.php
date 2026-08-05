@@ -9,7 +9,7 @@
         <div>
             <h1 class="h5 mb-0 fw-bold">PEÇAS DE AVATAR</h1>
             <p class="small gs-text-secondary mb-0">
-                Peças por slot (base, sombra, calçado, roupa inf/sup, rosto, cabelo, acessórios) · PNG/SVG ou ZIP Spine (máx. {{ $tamanhoMaxUpload }})
+                Peças por slot (corpo vestido, sombra, calçado, rosto, cabelo, acessórios) · PNG/SVG ou ZIP Spine (máx. {{ $tamanhoMaxUpload }})
             </p>
         </div>
     </div>
@@ -53,6 +53,7 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Asset (PNG/SVG/ZIP Spine)</label>
                         <input type="file" name="arquivo" class="form-control @error('arquivo') is-invalid @enderror" accept=".png,.jpg,.jpeg,.webp,.gif,.svg,.zip" required>
+                        <div class="form-text">PNG/JPG de corpo ou rosto são normalizados automaticamente para o canvas 512×820. No slot <strong>Corpo / personagem</strong>, envie o corpo já vestido (sem rosto/cabelo).</div>
                         @error('arquivo')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     </div>
 

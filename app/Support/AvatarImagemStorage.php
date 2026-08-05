@@ -12,14 +12,24 @@ class AvatarImagemStorage
 
     public const TAMANHO_MAXIMO_KB = 20480;
 
+    /** Thumb gerado automaticamente no último upload normalizado. */
+    public static ?string $lastGeneratedThumb = null;
+
     public static function tamanhoMaximoRotulo(): string
     {
         return '20 MB';
     }
 
-    public static function uploadAsset(UploadedFile $file, ?string $caminhoAntigo = null): string
-    {
+    /**
+     * @param  array{slot?: string, genero?: string, titulo?: string, tipo_asset?: string}|null  $contexto
+     */
+    public static function uploadAsset(
+        UploadedFile $file,
+        ?string $caminhoAntigo = null,
+        ?array $contexto = null,
+    ): string {
         self::delete($caminhoAntigo);
+        self::$lastGeneratedThumb = null;
 
         $ext = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'bin');
         $nome = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
@@ -30,9 +40,33 @@ class AvatarImagemStorage
             mkdir($destinoDir, 0755, true);
         }
 
-        // ZIP Spine: extrai para subpasta e retorna path do .json/.skel se existir
         if (in_array($ext, ['zip'], true)) {
             return self::extrairZipSpine($file, $nome);
+        }
+
+        $slot = $contexto['slot'] ?? null;
+        $tipoAsset = $contexto['tipo_asset'] ?? 'png';
+        $deveNormalizar = $slot
+            && $tipoAsset === 'png'
+            && AvatarLayerNormalizer::supportsExtension($ext);
+
+        if ($deveNormalizar) {
+            $tmp = $file->getRealPath();
+            if (! $tmp || ! is_file($tmp)) {
+                $stored = $file->storeAs('tmp-avatar', $nome);
+                $tmp = storage_path('app/' . $stored);
+            }
+
+            $paths = AvatarLayerNormalizer::normalizeUploadedFile(
+                $tmp,
+                $slot,
+                (string) ($contexto['genero'] ?? 'unissex'),
+                Str::slug(($contexto['titulo'] ?? '') . '-' . $slot) ?: ('peca-' . $slot),
+            );
+
+            self::$lastGeneratedThumb = $paths['thumb'];
+
+            return $paths['asset'];
         }
 
         $file->move($destinoDir, $nome);

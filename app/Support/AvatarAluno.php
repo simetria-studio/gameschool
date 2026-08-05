@@ -11,12 +11,11 @@ use Illuminate\Validation\ValidationException;
 
 class AvatarAluno
 {
-    /** Slots que o aluno pode equipar (tudo exceto base). */
+    /** Slots que o aluno pode trocar no editor (corpo já vem vestido na base). */
     public const SLOTS_EQUIPAVEIS = [
+        'base',
         'sombra',
         'calcado',
-        'roupa_inferior',
-        'roupa_superior',
         'rosto',
         'cabelo',
         'acessorio_cabeca',
@@ -24,7 +23,7 @@ class AvatarAluno
         'acessorio_outro',
     ];
 
-    /** Ordem de render (atrás → frente), inclui base. */
+    /** Ordem de render (atrás → frente), inclui slots legados vazios. */
     public static function slotsRender(): array
     {
         return AvatarPeca::SLOTS;
@@ -113,10 +112,12 @@ class AvatarAluno
             ->groupBy('slot');
 
         $config = [];
-        foreach (self::slotsRender() as $slot) {
+        foreach (AvatarPeca::SLOTS_ATIVOS as $slot) {
             $peca = ($possuidas[$slot] ?? collect())->first();
             $config[$slot] = $peca?->id;
         }
+        $config['roupa_superior'] = null;
+        $config['roupa_inferior'] = null;
 
         return $config;
     }
@@ -153,22 +154,23 @@ class AvatarAluno
 
         $config = $avatar->configuracao_json ?? [];
 
-        // Base sempre a starter/base do gênero
-        $base = AvatarPeca::query()
+        // Garante que existe ao menos uma base do gênero (corpo vestido)
+        $basePadrao = AvatarPeca::query()
             ->where('slot', 'base')
-            ->where('genero', $genero)
             ->where('status', 'ativo')
-            ->where('is_starter', true)
+            ->where(function ($q) use ($genero) {
+                $q->where('genero', $genero)->orWhere('genero', 'unissex');
+            })
+            ->orderByRaw("CASE WHEN genero = ? THEN 0 ELSE 1 END", [$genero])
+            ->orderByDesc('is_starter')
             ->orderBy('id')
             ->first();
 
-        if (! $base) {
+        if (! $basePadrao) {
             throw ValidationException::withMessages([
-                'genero' => ['Não há base cadastrada para este gênero.'],
+                'genero' => ['Não há corpo/personagem cadastrado para este gênero.'],
             ]);
         }
-
-        $config['base'] = $base->id;
 
         foreach (self::SLOTS_EQUIPAVEIS as $slot) {
             if (! array_key_exists($slot, $slotsInput)) {
@@ -177,6 +179,10 @@ class AvatarAluno
 
             $pecaId = $slotsInput[$slot];
             if ($pecaId === null || $pecaId === '' || $pecaId === 0) {
+                // Base não pode ficar vazia
+                if ($slot === 'base') {
+                    continue;
+                }
                 $config[$slot] = null;
                 continue;
             }
@@ -205,6 +211,15 @@ class AvatarAluno
             $config[$slot] = $peca->id;
         }
 
+        if (empty($config['base'])) {
+            $config['base'] = $basePadrao->id;
+            self::alunoPossui($aluno, $basePadrao);
+        }
+
+        // Limpa camadas de roupa legadas (corpo já vem vestido na base)
+        $config['roupa_superior'] = null;
+        $config['roupa_inferior'] = null;
+
         $avatar->genero = $genero;
         $avatar->configuracao_json = $config;
         $avatar->thumbnail_url = self::thumbnailDaConfig($config);
@@ -222,7 +237,7 @@ class AvatarAluno
         $config = $avatar->configuracao_json ?? [];
         $changed = false;
 
-        foreach (self::slotsRender() as $slot) {
+        foreach (AvatarPeca::SLOTS_ATIVOS as $slot) {
             if (! empty($config[$slot])) {
                 continue;
             }
@@ -242,6 +257,12 @@ class AvatarAluno
                 self::alunoPossui($aluno, $peca);
                 $changed = true;
             }
+        }
+
+        if (($config['roupa_superior'] ?? null) !== null || ($config['roupa_inferior'] ?? null) !== null) {
+            $config['roupa_superior'] = null;
+            $config['roupa_inferior'] = null;
+            $changed = true;
         }
 
         if ($changed) {

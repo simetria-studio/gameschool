@@ -66,6 +66,7 @@ class AvatarApiController extends Controller
 
         $query = AvatarPeca::query()
             ->where('status', 'ativo')
+            ->whereIn('slot', AvatarPeca::SLOTS_ATIVOS)
             ->when($request->filled('slot'), fn ($q) => $q->where('slot', $request->string('slot')))
             ->when($generoFiltro, function ($q) use ($generoFiltro) {
                 $q->where(function ($inner) use ($generoFiltro) {
@@ -93,8 +94,10 @@ class AvatarApiController extends Controller
 
         return response()->json([
             'data' => [
-                'slots' => AvatarPeca::SLOTS,
-                'slot_labels' => AvatarPeca::SLOT_LABELS,
+                'slots' => AvatarPeca::SLOTS_ATIVOS,
+                'slot_labels' => collect(AvatarPeca::SLOTS_ATIVOS)
+                    ->mapWithKeys(fn ($s) => [$s => AvatarPeca::SLOT_LABELS[$s] ?? $s])
+                    ->all(),
                 'itens' => $itens,
             ],
         ]);

@@ -11,7 +11,9 @@ class AvatarPeca extends Model
     protected $table = 'avatar_pecas';
 
     /**
-     * Ordem de empilhamento (atrás → frente), alinhada ao sheet de arte.
+     * Ordem de empilhamento (atrás → frente).
+     * Roupa superior/inferior permanecem só por compatibilidade com dados antigos —
+     * o fluxo atual usa corpo já vestido no slot `base`.
      */
     public const SLOTS = [
         'base',
@@ -26,8 +28,20 @@ class AvatarPeca extends Model
         'acessorio_outro',
     ];
 
+    /** Slots usados no cadastro e no editor (sem roupa em camadas). */
+    public const SLOTS_ATIVOS = [
+        'base',
+        'sombra',
+        'calcado',
+        'rosto',
+        'cabelo',
+        'acessorio_cabeca',
+        'acessorio_rosto',
+        'acessorio_outro',
+    ];
+
     public const SLOT_LABELS = [
-        'base' => 'Base (corpo)',
+        'base' => 'Corpo / personagem',
         'sombra' => 'Sombra / efeitos',
         'calcado' => 'Calçados',
         'roupa_inferior' => 'Roupa (inferior)',
