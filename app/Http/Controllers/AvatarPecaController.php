@@ -97,9 +97,10 @@ class AvatarPecaController extends Controller
         }
 
         $validated['is_starter'] = $request->boolean('is_starter');
-        $validated['meta_json'] = [
+        $validated['meta_json'] = array_filter([
             'z_index' => $this->zIndexForSlot($validated['slot']),
-        ];
+            'original_url' => AvatarImagemStorage::$lastOriginal,
+        ], fn ($v) => $v !== null);
 
         unset($validated['arquivo'], $validated['thumbnail']);
 
@@ -153,6 +154,9 @@ class AvatarPecaController extends Controller
         $validated['is_starter'] = $request->boolean('is_starter');
         $meta = $avatarPeca->meta_json ?? [];
         $meta['z_index'] = $this->zIndexForSlot($validated['slot']);
+        if (AvatarImagemStorage::$lastOriginal) {
+            $meta['original_url'] = AvatarImagemStorage::$lastOriginal;
+        }
         $validated['meta_json'] = $meta;
 
         unset($validated['arquivo'], $validated['thumbnail']);

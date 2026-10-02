@@ -3,7 +3,11 @@
 /**
  * Re-normaliza peças raster (rosto/base/etc.) que não estão no canvas 512×820.
  *
- * Uso: php scripts/renormalize-avatar-pecas.php
+ * Uso:
+ *   php scripts/renormalize-avatar-pecas.php
+ *   php scripts/renormalize-avatar-pecas.php --force
+ *   php scripts/renormalize-avatar-pecas.php --force --slot=cabelo
+ *   php scripts/renormalize-avatar-pecas.php --force --id=31,32
  */
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -15,10 +19,28 @@ use App\Models\AvatarPeca;
 use App\Support\AvatarImagemStorage;
 use App\Support\AvatarLayerNormalizer;
 
+$args = $argv ?? [];
+$forcar = in_array('--force', $args, true);
+
+$opcao = function (string $nome) use ($args): ?string {
+    foreach ($args as $a) {
+        if (str_starts_with($a, "--$nome=")) {
+            return substr($a, strlen($nome) + 3);
+        }
+    }
+
+    return null;
+};
+
+$slotFiltro = $opcao('slot');
+$idFiltro = $opcao('id');
+
 $slots = array_merge(['base'], AvatarLayerNormalizer::HEAD_SLOTS);
 $pecas = AvatarPeca::query()
     ->whereIn('slot', $slots)
     ->where('tipo_asset', 'png')
+    ->when($slotFiltro, fn ($q) => $q->where('slot', $slotFiltro))
+    ->when($idFiltro, fn ($q) => $q->whereIn('id', array_map('intval', explode(',', $idFiltro))))
     ->orderBy('slot')
     ->orderBy('id')
     ->get();
@@ -26,7 +48,17 @@ $pecas = AvatarPeca::query()
 echo "Peças candidatas: {$pecas->count()}\n";
 
 foreach ($pecas as $peca) {
-    $full = AvatarLayerNormalizer::publicPathFromUrl((string) $peca->asset_url);
+    // Prefere o arquivo original preservado (sem perdas do processamento anterior)
+    $original = $peca->meta_json['original_url'] ?? null;
+    $full = $original
+        ? AvatarLayerNormalizer::publicPathFromUrl((string) $original)
+        : null;
+    $usandoOriginal = $full && is_file($full);
+
+    if (! $usandoOriginal) {
+        $full = AvatarLayerNormalizer::publicPathFromUrl((string) $peca->asset_url);
+    }
+
     if (! $full || ! is_file($full)) {
         echo "SKIP #{$peca->id} {$peca->titulo} — arquivo ausente\n";
         continue;
@@ -44,12 +76,13 @@ foreach ($pecas as $peca) {
     $jaOk = $w === AvatarLayerNormalizer::CANVAS_W && $h === AvatarLayerNormalizer::CANVAS_H
         && str_contains((string) $peca->asset_url, '/normalized/');
 
-    if ($jaOk) {
+    if ($jaOk && ! $usandoOriginal && ! $forcar) {
         echo "OK   #{$peca->id} {$peca->titulo} — já {$w}x{$h} normalizado\n";
         continue;
     }
 
-    echo "FIX  #{$peca->id} {$peca->titulo} ({$peca->slot}) {$w}x{$h} → 512x820 ... ";
+    $fonte = $usandoOriginal ? 'original' : 'asset atual';
+    echo "FIX  #{$peca->id} {$peca->titulo} ({$peca->slot}) {$w}x{$h} [{$fonte}] → 512x820 ... ";
 
     try {
         $paths = AvatarLayerNormalizer::normalizeUploadedFile(

@@ -15,6 +15,9 @@ class AvatarImagemStorage
     /** Thumb gerado automaticamente no último upload normalizado. */
     public static ?string $lastGeneratedThumb = null;
 
+    /** Arquivo original preservado no último upload normalizado. */
+    public static ?string $lastOriginal = null;
+
     public static function tamanhoMaximoRotulo(): string
     {
         return '20 MB';
@@ -30,6 +33,7 @@ class AvatarImagemStorage
     ): string {
         self::delete($caminhoAntigo);
         self::$lastGeneratedThumb = null;
+        self::$lastOriginal = null;
 
         $ext = strtolower($file->getClientOriginalExtension() ?: $file->extension() ?: 'bin');
         $nome = Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
@@ -51,20 +55,23 @@ class AvatarImagemStorage
             && AvatarLayerNormalizer::supportsExtension($ext);
 
         if ($deveNormalizar) {
-            $tmp = $file->getRealPath();
-            if (! $tmp || ! is_file($tmp)) {
-                $stored = $file->storeAs('tmp-avatar', $nome);
-                $tmp = storage_path('app/' . $stored);
-            }
+            // Guarda o arquivo original para permitir re-normalizar sem novo upload
+            $originaisDir = AvatarLayerNormalizer::ensureWritableDir(
+                public_path('imgs/avatar/originals')
+            );
+            $file->move($originaisDir, $nome);
+            $original = $originaisDir . DIRECTORY_SEPARATOR . $nome;
+            @chmod($original, 0664);
 
             $paths = AvatarLayerNormalizer::normalizeUploadedFile(
-                $tmp,
+                $original,
                 $slot,
                 (string) ($contexto['genero'] ?? 'unissex'),
                 Str::slug(($contexto['titulo'] ?? '') . '-' . $slot) ?: ('peca-' . $slot),
             );
 
             self::$lastGeneratedThumb = $paths['thumb'];
+            self::$lastOriginal = self::PREFIX . 'originals/' . $nome;
 
             return $paths['asset'];
         }

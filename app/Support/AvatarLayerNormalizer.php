@@ -17,6 +17,12 @@ class AvatarLayerNormalizer
 
     public const THUMB_SIZE = 256;
 
+    /** Faixa livre no topo do canvas para cabelo/chapéu não serem cortados. */
+    private const TOP_RESERVE = 0.085;
+
+    /** Folga abaixo dos pés. */
+    private const BOTTOM_MARGIN = 0.03;
+
     /** Guia do briefing quando não há base detectável. */
     private const FALLBACK_HEAD = [
         'x' => 148,
@@ -209,18 +215,20 @@ class AvatarLayerNormalizer
     /** @return resource|\GdImage */
     private static function placeOnHead(string $faceSrc, array $head, string $slot)
     {
-        $face = self::cropOpaque(self::removeBlackBg(self::loadImage($faceSrc)));
+        $limpo = self::removeBlackBg(self::loadImage($faceSrc));
+        $face = self::cropOpaque($limpo);
+        imagedestroy($limpo);
         $cw = imagesx($face);
         $ch = imagesy($face);
 
         // Rosto cobre a cabeça careca; cabelo/acessórios um pouco maiores.
         $scaleFactorW = match ($slot) {
-            'cabelo', 'acessorio_cabeca' => 1.55,
+            'cabelo', 'acessorio_cabeca' => 1.01,
             'acessorio_rosto' => 1.15,
             default => 1.22,
         };
         $scaleFactorH = match ($slot) {
-            'cabelo', 'acessorio_cabeca' => 1.65,
+            'cabelo', 'acessorio_cabeca' => 1.03,
             'acessorio_rosto' => 1.10,
             default => 1.28,
         };
@@ -233,15 +241,17 @@ class AvatarLayerNormalizer
 
         $dx = (int) round($head['cx'] - $nw / 2);
         $dy = match ($slot) {
-            'cabelo', 'acessorio_cabeca' => (int) round($head['y'] - $nh * 0.28),
+            'cabelo', 'acessorio_cabeca' => (int) round($head['y'] - $nh * 0.24),
             'acessorio_rosto' => (int) round($head['y'] + $head['h'] * 0.18 - $nh / 2),
             default => (int) round($head['y'] - $nh * 0.06),
         };
 
+        // Nunca deixar a peça sangrar para fora do canvas: cortaria pontas de cabelo/chapéu.
+        $dx = max(0, min($dx, self::CANVAS_W - $nw));
+        $dy = max(0, min($dy, self::CANVAS_H - $nh));
+
         $canvas = self::blankCanvas(self::CANVAS_W, self::CANVAS_H);
-        imagealphablending($canvas, true);
         imagecopyresampled($canvas, $face, $dx, $dy, 0, 0, $nw, $nh, $cw, $ch);
-        imagealphablending($canvas, false);
         imagedestroy($face);
 
         return $canvas;
@@ -260,17 +270,16 @@ class AvatarLayerNormalizer
         $cw = imagesx($cropped);
         $ch = imagesy($cropped);
         $maxW = (int) ($canvasW * (1 - 2 * $margin));
-        $maxH = (int) ($canvasH * (1 - 2 * $margin));
+        $maxH = (int) ($canvasH * (1 - self::TOP_RESERVE - self::BOTTOM_MARGIN));
         $scale = min($maxW / max(1, $cw), $maxH / max(1, $ch));
         $nw = max(1, (int) round($cw * $scale));
         $nh = max(1, (int) round($ch * $scale));
         $dx = (int) round(($canvasW - $nw) / 2);
-        $dy = (int) round($canvasH - $nh - $canvasH * 0.035);
+        $dy = (int) round($canvasH - $nh - $canvasH * self::BOTTOM_MARGIN);
 
+        // alphablending desligado: preserva o canal alfa em vez de mesclar com preto
         $canvas = self::blankCanvas($canvasW, $canvasH);
-        imagealphablending($canvas, true);
         imagecopyresampled($canvas, $cropped, $dx, $dy, 0, 0, $nw, $nh, $cw, $ch);
-        imagealphablending($canvas, false);
         imagedestroy($cropped);
 
         return compact('canvas', 'dx', 'dy', 'nw', 'nh');
@@ -296,10 +305,9 @@ class AvatarLayerNormalizer
         $dx = (int) round(($canvasW - $nw) / 2);
         $dy = (int) round(($canvasH - $nh) / 2);
 
+        // alphablending desligado: preserva o canal alfa em vez de mesclar com preto
         $canvas = self::blankCanvas($canvasW, $canvasH);
-        imagealphablending($canvas, true);
         imagecopyresampled($canvas, $cropped, $dx, $dy, 0, 0, $nw, $nh, $cw, $ch);
-        imagealphablending($canvas, false);
         imagedestroy($cropped);
 
         return compact('canvas', 'dx', 'dy', 'nw', 'nh');
@@ -418,15 +426,11 @@ class AvatarLayerNormalizer
         $pad = (int) round(max($cw, $ch) * 0.08);
         $side = max($cw, $ch) + 2 * $pad;
         $square = self::blankCanvas($side, $side);
-        imagealphablending($square, true);
         imagecopy($square, $cropped, (int) (($side - $cw) / 2), (int) (($side - $ch) / 2), 0, 0, $cw, $ch);
-        imagealphablending($square, false);
         imagedestroy($cropped);
 
         $thumb = self::blankCanvas($size, $size);
-        imagealphablending($thumb, true);
         imagecopyresampled($thumb, $square, 0, 0, 0, 0, $size, $size, $side, $side);
-        imagealphablending($thumb, false);
         imagedestroy($square);
 
         return $thumb;
@@ -448,18 +452,36 @@ class AvatarLayerNormalizer
             throw new RuntimeException('Falha ao abrir imagem de avatar: ' . basename($path));
         }
 
+        // PNG indexado devolve índice de paleta em imagecolorat(); converter evita cor/alpha errados.
+        if (! imageistruecolor($img)) {
+            imagepalettetotruecolor($img);
+        }
+
         imagealphablending($img, false);
         imagesavealpha($img, true);
 
         return $img;
     }
 
-    /** @param  resource|\GdImage  $src
-     *  @return resource|\GdImage */
+    /**
+     * Só limpa fundo preto quando a arte não tem transparência (export achatado).
+     * Em PNG com alpha, apagar pixels escuros destruiria cabelo/contornos.
+     *
+     * @param  resource|\GdImage  $src
+     * @return resource|\GdImage
+     */
     private static function removeBlackBg($src, int $threshold = 32)
     {
+        if (self::hasAlpha($src)) {
+            return $src;
+        }
+
         $w = imagesx($src);
         $h = imagesy($src);
+        if (! self::bordaEscura($src, $threshold)) {
+            return $src;
+        }
+
         $dst = imagecreatetruecolor($w, $h);
         imagealphablending($dst, false);
         imagesavealpha($dst, true);
@@ -483,7 +505,62 @@ class AvatarLayerNormalizer
             }
         }
 
+        imagedestroy($src);
+
         return $dst;
+    }
+
+    /** @param  resource|\GdImage  $img */
+    private static function hasAlpha($img): bool
+    {
+        $w = imagesx($img);
+        $h = imagesy($img);
+        $stepX = max(1, (int) ($w / 120));
+        $stepY = max(1, (int) ($h / 120));
+
+        for ($y = 0; $y < $h; $y += $stepY) {
+            for ($x = 0; $x < $w; $x += $stepX) {
+                if (((imagecolorat($img, $x, $y) & 0x7F000000) >> 24) > 10) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /** Verifica se a moldura da imagem é praticamente preta. */
+    private static function bordaEscura($img, int $threshold): bool
+    {
+        $w = imagesx($img);
+        $h = imagesy($img);
+        $amostras = 0;
+        $escuros = 0;
+
+        $checar = function (int $x, int $y) use ($img, $threshold, &$amostras, &$escuros): void {
+            $rgba = imagecolorat($img, $x, $y);
+            $r = ($rgba >> 16) & 0xFF;
+            $g = ($rgba >> 8) & 0xFF;
+            $b = $rgba & 0xFF;
+            $amostras++;
+            if ($r <= $threshold && $g <= $threshold && $b <= $threshold) {
+                $escuros++;
+            }
+        };
+
+        $stepX = max(1, (int) ($w / 60));
+        $stepY = max(1, (int) ($h / 60));
+
+        for ($x = 0; $x < $w; $x += $stepX) {
+            $checar($x, 0);
+            $checar($x, $h - 1);
+        }
+        for ($y = 0; $y < $h; $y += $stepY) {
+            $checar(0, $y);
+            $checar($w - 1, $y);
+        }
+
+        return $amostras > 0 && ($escuros / $amostras) > 0.85;
     }
 
     /** @param  resource|\GdImage  $img */
